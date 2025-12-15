@@ -75,7 +75,7 @@
             flex: 1;
         }
 
-        /* Image Gallery */
+        /* Image Gallery - تعديلات لإضافة خصائص الشريحة (Carousel) */
         .product-image-gallery {
             position: relative;
             width: 100%;
@@ -86,22 +86,72 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
+        /* حاوية الصورة الرئيسية والمتحركة */
         .main-product-image {
             width: 100%;
-            padding-top: 100%;
+            padding-top: 100%; /* نسبة 1:1 للصور */
             position: relative;
             background: #f8f9fa;
+            overflow: hidden; /* لإخفاء الصور غير المعروضة */
         }
 
-        .main-product-image img {
+        /* حاوية جميع الصور لتمكين التمرير الأفقي بواسطة جافاسكريبت */
+        .image-carousel {
             position: absolute;
             inset: 0;
+            display: flex; /* لعرض الصور جنباً إلى جنب */
+            transition: transform 0.3s ease-in-out; /* حركة سلسة عند التنقل */
+        }
+        
+        .carousel-item {
+            min-width: 100%; /* كل صورة تأخذ عرض الحاوية */
+            height: 100%;
+            position: relative;
+            flex-shrink: 0; /* لمنع تقلص الصور */
+        }
+
+        .carousel-item img {
             width: 100%;
             height: 100%;
             object-fit: contain;
             padding: 20px;
         }
 
+        /* أزرار التنقل */
+        .carousel-nav-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            z-index: 10;
+            font-size: 24px;
+            line-height: 1;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+
+        .carousel-nav-btn:hover {
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        .prev-btn {
+            right: 10px; /* لغة عربية: السهم السابق يكون يمين الصورة */
+        }
+
+        .next-btn {
+            left: 10px; /* لغة عربية: السهم التالي يكون يسار الصورة */
+        }
+
+        /* الصور المصغرة */
         .image-thumbnails {
             display: flex;
             gap: 10px;
@@ -120,6 +170,7 @@
             cursor: pointer;
             border: 2px solid transparent;
             background: #f8f9fa;
+            transition: border-color 0.2s;
         }
 
         .image-thumbnail.active {
@@ -352,11 +403,15 @@
             
             <div class="product-image-gallery">
                 <div class="main-product-image">
-                    <img id="mainProductImage" src="" alt="">
+                    <div class="image-carousel" id="imageCarousel">
+                        </div>
+                    
+                    <button class="carousel-nav-btn prev-btn" onclick="navigateCarousel(-1)">❮</button>
+                    <button class="carousel-nav-btn next-btn" onclick="navigateCarousel(1)">❯</button>
                 </div>
+                
                 <div class="image-thumbnails" id="imageThumbnails">
-                    <!-- سيتم إضافة الصور المصغرة هنا -->
-                </div>
+                    </div>
             </div>
             
             <div class="product-info">
@@ -379,8 +434,7 @@
                 </div>
                 
                 <div class="product-meta" id="productMeta">
-                    <!-- سيتم إضافة المعلومات الإضافية هنا -->
-                </div>
+                    </div>
             </div>
             
             <div class="product-actions">
@@ -419,6 +473,10 @@
         const SAR_RATE = 140;
         let currentCurrency = localStorage.getItem('currentCurrency') || 'YER';
         
+        // متغيرات خاصة بالشريحة (Carousel)
+        let currentImageIndex = 0; // مؤشر الصورة الحالية
+        let productImages = []; // قائمة بجميع صور المنتج
+
         async function loadProduct() {
             if (!productId) {
                 document.getElementById('loading').innerHTML = '❌ معرف المنتج غير موجود';
@@ -426,8 +484,7 @@
             }
             
             try {
-                // في الواقع، ستجلب البيانات من Supabase
-                // هذا مثال للبيانات الوهمية
+                // هذا مثال للبيانات الوهمية، يجب استبداله بجلب البيانات من الخادم
                 
                 // جلب البيانات من localStorage إذا كانت موجودة
                 const storedProducts = localStorage.getItem('allProducts');
@@ -438,6 +495,23 @@
                     productData = products.find(p => p.id == productId);
                 }
                 
+                // إذا لم يتم العثور على المنتج، ضع بيانات وهمية لضمان عمل المعرض
+                if (!productData) {
+                    productData = {
+                        id: productId,
+                        name: 'طقم أدوات مطبخ عصري',
+                        price: 35000,
+                        description: 'طقم متكامل وعالي الجودة مصنوع من الستانلس ستيل المقاوم للصدأ. تصميم أنيق وعملي يلبي جميع احتياجات مطبخك الحديث. يتضمن ضمان لمدة عام كامل.',
+                        category: 'مطبخ',
+                        // هذا الجزء مهم لاختبار المعرض
+                        image: [
+                            'https://picsum.photos/id/111/800/800', // الصورة الأولى
+                            'https://picsum.photos/id/112/800/800', // الصورة الثانية
+                            'https://picsum.photos/id/113/800/800', // الصورة الثالثة
+                            'https://picsum.photos/id/114/800/800', // الصورة الرابعة
+                        ]
+                    };
+                }
          
                 
                 // عرض المنتج بعد تأخير بسيط لمحاكاة التحميل
@@ -459,32 +533,39 @@
             // تعبئة البيانات
             document.getElementById('productTitle').textContent = product.name || 'منتج';
             
-            // الصور
-            const images = Array.isArray(product.image) ? product.image : [product.image || ''];
-            const mainImage = document.getElementById('mainProductImage');
+            // تهيئة الصور (معرض الصور)
+            productImages = Array.isArray(product.image) ? product.image : [product.image || ''];
+            const carouselContainer = document.getElementById('imageCarousel');
             const thumbnailsContainer = document.getElementById('imageThumbnails');
             
-            if (images[0]) {
-                mainImage.src = images[0];
-                mainImage.alt = product.name || '';
-            }
-            
-            // إنشاء الصور المصغرة
+            // 1. إنشاء عناصر الشريحة (Carousel Items)
+            carouselContainer.innerHTML = '';
+            productImages.forEach((img, index) => {
+                if (img) {
+                    const carouselItem = document.createElement('div');
+                    carouselItem.className = 'carousel-item';
+                    carouselItem.innerHTML = `<img src="${img}" alt="${product.name} - صورة ${index + 1}">`;
+                    carouselContainer.appendChild(carouselItem);
+                }
+            });
+
+            // 2. إنشاء الصور المصغرة (Thumbnails)
             thumbnailsContainer.innerHTML = '';
-            images.forEach((img, index) => {
+            productImages.forEach((img, index) => {
                 if (img) {
                     const thumbnail = document.createElement('div');
                     thumbnail.className = `image-thumbnail ${index === 0 ? 'active' : ''}`;
                     thumbnail.onclick = () => {
-                        mainImage.src = img;
-                        document.querySelectorAll('.image-thumbnail').forEach(t => t.classList.remove('active'));
-                        thumbnail.classList.add('active');
+                        showImage(index); // استخدام دالة العرض الجديدة
                     };
                     
                     thumbnail.innerHTML = `<img src="${img}" alt="${product.name} - صورة ${index + 1}">`;
                     thumbnailsContainer.appendChild(thumbnail);
                 }
             });
+            
+            // عرض الصورة الأولى وتحديث الواجهة
+            showImage(0); 
             
             // السعر
             updatePrices(product.price || 0);
@@ -527,6 +608,47 @@
             
             // حفظ معرف المنتج في localStorage للاستخدام في الدوال الأخرى
             localStorage.setItem('currentProduct', JSON.stringify(product));
+        }
+
+        /**
+         * دالة لعرض صورة محددة في الشريحة وتحديث الصورة المصغرة النشطة
+         * @param {number} index - مؤشر الصورة المراد عرضها
+         */
+        function showImage(index) {
+            if (productImages.length === 0) return;
+
+            // التأكد من أن المؤشر ضمن الحدود (حلقة لا نهائية)
+            if (index >= productImages.length) {
+                index = 0;
+            } else if (index < 0) {
+                index = productImages.length - 1;
+            }
+
+            currentImageIndex = index;
+
+            const carousel = document.getElementById('imageCarousel');
+            const thumbnailElements = document.querySelectorAll('.image-thumbnail');
+
+            // تحريك الشريحة: (نضرب في -100% لأن الاتجاه عربي R-T-L)
+            const offset = -currentImageIndex * 100;
+            carousel.style.transform = `translateX(${offset}%)`;
+
+            // تحديث الصورة المصغرة النشطة
+            thumbnailElements.forEach((t, i) => {
+                t.classList.toggle('active', i === currentImageIndex);
+                if (i === currentImageIndex) {
+                    // تمرير الصورة المصغرة النشطة إلى العرض
+                    t.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            });
+        }
+        
+        /**
+         * دالة التنقل بين الصور بواسطة الأسهم
+         * @param {number} direction - 1 للتالي، -1 للسابق
+         */
+        function navigateCarousel(direction) {
+            showImage(currentImageIndex + direction);
         }
         
         function updatePrices(price) {
