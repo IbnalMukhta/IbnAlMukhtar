@@ -357,7 +357,7 @@
             overflow: hidden;
             box-shadow: 0 5px 25px rgba(0, 0, 0, 0.08);
             border: 1px solid var(--border-color);
-            margin-bottom: 30px;
+            margin-bottom: 20px;
         }
         
         .table-responsive {
@@ -527,6 +527,41 @@
             color: var(--dark);
         }
         
+        /* زر عرض المزيد */
+        .load-more-container {
+            text-align: center;
+            margin: 20px 0 30px;
+        }
+        
+        .btn-load-more {
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 14px 40px;
+            font-family: 'Tajawal', sans-serif;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 0 auto;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(198, 160, 71, 0.25);
+        }
+        
+        .btn-load-more:hover:not(:disabled) {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(198, 160, 71, 0.4);
+        }
+        
+        .btn-load-more:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
         /* التذييل */
         footer {
             text-align: center;
@@ -688,6 +723,11 @@
                 width: 100%;
                 margin-bottom: 5px;
             }
+            
+            .btn-load-more {
+                padding: 12px 30px;
+                font-size: 14px;
+            }
         }
         
         @media (max-width: 576px) {
@@ -716,6 +756,11 @@
             
             .add-product-top-btn .btn-add-top {
                 padding: 10px 15px;
+                font-size: 13px;
+            }
+            
+            .btn-load-more {
+                padding: 10px 25px;
                 font-size: 13px;
             }
         }
@@ -912,12 +957,21 @@
             </div>
         </div>
 
+        <!-- زر عرض المزيد -->
+        <div class="load-more-container">
+            <button id="loadMoreBtn" class="btn-load-more" disabled>
+                <i class="fas fa-spinner fa-spin" id="loadMoreSpinner" style="display: none;"></i>
+                <i class="fas fa-chevron-down" id="loadMoreIcon"></i>
+                <span id="loadMoreText">عرض المزيد</span>
+            </button>
+        </div>
+
         <!-- التذييل -->
         <footer>
             <p>© 2024 نظام إدارة المتجر | تم التطوير باستخدام Supabase</p>
             <p style="margin-top: 8px; font-size: 12px; color: #888;">
                 <i class="fas fa-bolt" style="color: var(--primary);"></i>
- من قبل خليل ابراهيم 
+                من قبل خليل ابراهيم 
                 نظام متقدم مع Lazy Loading للصور وتقليل استهلاك البيانات
             </p>
         </footer>
@@ -948,9 +1002,15 @@
         // متغيرات التطبيق
         let allProducts = [];
         let filteredProducts = [];
+        let displayedProducts = [];
         let categories = [];
-        let currentPage = 1;
-        const productsPerPage = 15;
+        let currentPage = 0;
+        const productsPerPage = 10;
+        let hasMoreProducts = false;
+        let isLoadingMore = false;
+        let currentSearchTerm = '';
+        let currentCategoryFilter = '';
+        let currentSortBy = 'newest';
         let observer = null;
 
         // عناصر DOM
@@ -977,7 +1037,13 @@
             // تحميل وإشعارات
             loadingOverlay: document.getElementById('loadingOverlay'),
             loadingText: document.getElementById('loadingText'),
-            notification: document.getElementById('notification')
+            notification: document.getElementById('notification'),
+            
+            // زر عرض المزيد
+            loadMoreBtn: document.getElementById('loadMoreBtn'),
+            loadMoreSpinner: document.getElementById('loadMoreSpinner'),
+            loadMoreIcon: document.getElementById('loadMoreIcon'),
+            loadMoreText: document.getElementById('loadMoreText')
         };
 
         // دالة لعرض الإشعارات
@@ -1075,18 +1141,18 @@
         // تحديث الإحصائيات
         function updateStatistics(products) {
             // إجمالي المنتجات
-            elements.totalProducts.textContent = formatNumber(products.length);
+            elements.totalProducts.textContent = formatNumber(allProducts.length);
             
             // إجمالي التصنيفات
-            const uniqueCategories = [...new Set(products.map(p => p.category))].filter(c => c);
+            const uniqueCategories = [...new Set(allProducts.map(p => p.category))].filter(c => c);
             elements.totalCategories.textContent = formatNumber(uniqueCategories.length);
             
             // القيمة الإجمالية
-            const totalValue = products.reduce((sum, product) => sum + (product.price || 0), 0);
+            const totalValue = allProducts.reduce((sum, product) => sum + (product.price || 0), 0);
             elements.totalValue.textContent = formatPrice(totalValue);
             
             // إجمالي الصور
-            const totalImages = products.reduce((sum, product) => sum + (product.image?.length || 0), 0);
+            const totalImages = allProducts.reduce((sum, product) => sum + (product.image?.length || 0), 0);
             elements.totalImages.textContent = formatNumber(totalImages);
         }
 
@@ -1130,10 +1196,8 @@
             }
         }
 
-        // تحميل جميع المنتجات
-        async function loadAllProducts() {
-            showLoading('جاري تحميل المنتجات...');
-            
+        // تحميل المنتجات (الكمية المحددة فقط)
+        async function loadProducts(limit, offset = 0) {
             try {
                 // محاولة جلب البيانات مع أو بدون created_at
                 let query = sb.from(PRODUCTS_TABLE).select('*');
@@ -1146,12 +1210,38 @@
                     console.log('لا يوجد عمود created_at، نستخدم الترتيب الافتراضي');
                 }
                 
+                // تطبيق التحديد والكمية
+                query = query.range(offset, offset + limit - 1);
+                
                 const { data, error } = await query;
                 
                 if (error) throw error;
                 
-                allProducts = data || [];
-                filteredProducts = [...allProducts];
+                return data || [];
+                
+            } catch (error) {
+                console.error('خطأ في تحميل المنتجات:', error);
+                throw error;
+            }
+        }
+
+        // تحميل المنتجات الأولية (10 منتجات)
+        async function loadInitialProducts() {
+            showLoading('جاري تحميل المنتجات...');
+            
+            try {
+                // تحميل أول 10 منتجات
+                const initialProducts = await loadProducts(productsPerPage, 0);
+                allProducts = initialProducts;
+                filteredProducts = [...initialProducts];
+                displayedProducts = [];
+                currentPage = 0;
+                
+                // التحقق إذا كان هناك المزيد من المنتجات
+                hasMoreProducts = initialProducts.length === productsPerPage;
+                
+                // تحديث حالة زر عرض المزيد
+                updateLoadMoreButton();
                 
                 // تحديث الإحصائيات
                 updateStatistics(allProducts);
@@ -1159,8 +1249,8 @@
                 // تحميل التصنيفات
                 await loadCategories();
                 
-                // عرض المنتجات
-                displayProducts();
+                // عرض المنتجات (10 منتجات أولى)
+                displayNextProducts();
                 
                 showNotification(`✅ تم تحميل ${allProducts.length} منتج بنجاح`, 'success');
                 
@@ -1174,32 +1264,112 @@
             }
         }
 
-        // تصفية المنتجات
-        function filterProducts() {
-            const searchTerm = elements.searchInput.value.toLowerCase().trim();
-            const selectedCategory = elements.categoryFilter.value;
-            const sortBy = elements.sortBy.value;
+        // تحميل المزيد من المنتجات
+        async function loadMoreProducts() {
+            if (isLoadingMore || !hasMoreProducts) return;
+            
+            isLoadingMore = true;
+            updateLoadMoreButton(true);
+            
+            try {
+                // حساب الإزاحة بناءً على عدد المنتجات المحملة بالفعل
+                const offset = allProducts.length;
+                
+                // تحميل 10 منتجات إضافية
+                const moreProducts = await loadProducts(productsPerPage, offset);
+                
+                if (moreProducts.length > 0) {
+                    // إضافة المنتجات الجديدة إلى القائمة
+                    allProducts = [...allProducts, ...moreProducts];
+                    filteredProducts = [...allProducts];
+                    
+                    // التحقق إذا كان هناك المزيد من المنتجات
+                    hasMoreProducts = moreProducts.length === productsPerPage;
+                    
+                    // تحديث الإحصائيات
+                    updateStatistics(allProducts);
+                    
+                    // تطبيق الفلاتر الحالية على البيانات الجديدة
+                    applyCurrentFilters();
+                    
+                    // عرض المنتجات الإضافية
+                    displayNextProducts();
+                    
+                    showNotification(`✅ تم تحميل ${moreProducts.length} منتج إضافي`, 'success');
+                } else {
+                    hasMoreProducts = false;
+                    showNotification('✅ تم تحميل جميع المنتجات', 'info');
+                }
+                
+            } catch (error) {
+                console.error('خطأ في تحميل المزيد من المنتجات:', error);
+                showNotification('❌ فشل تحميل المزيد: ' + error.message, 'error');
+            } finally {
+                isLoadingMore = false;
+                updateLoadMoreButton(false);
+            }
+        }
+
+        // تحديث حالة زر عرض المزيد
+        function updateLoadMoreButton(loading = false) {
+            const btn = elements.loadMoreBtn;
+            const spinner = elements.loadMoreSpinner;
+            const icon = elements.loadMoreIcon;
+            const text = elements.loadMoreText;
+            
+            if (loading) {
+                btn.disabled = true;
+                spinner.style.display = 'inline-block';
+                icon.style.display = 'none';
+                text.textContent = 'جاري التحميل...';
+            } else {
+                btn.disabled = !hasMoreProducts;
+                spinner.style.display = 'none';
+                icon.style.display = 'inline-block';
+                text.textContent = hasMoreProducts ? 'عرض المزيد' : 'تم تحميل جميع المنتجات';
+                
+                // إخفاء الزر إذا لم يكن هناك منتجات إضافية
+                btn.style.display = hasMoreProducts ? 'flex' : 'none';
+            }
+        }
+
+        // تطبيق الفلاتر الحالية
+        function applyCurrentFilters() {
+            currentSearchTerm = elements.searchInput.value.toLowerCase().trim();
+            currentCategoryFilter = elements.categoryFilter.value;
+            currentSortBy = elements.sortBy.value;
             
             filteredProducts = allProducts.filter(product => {
                 // البحث في الاسم والوصف
-                const matchesSearch = !searchTerm || 
-                    (product.name && product.name.toLowerCase().includes(searchTerm)) ||
-                    (product.description && product.description.toLowerCase().includes(searchTerm));
+                const matchesSearch = !currentSearchTerm || 
+                    (product.name && product.name.toLowerCase().includes(currentSearchTerm)) ||
+                    (product.description && product.description.toLowerCase().includes(currentSearchTerm));
                 
                 // التصفية حسب التصنيف
-                const matchesCategory = !selectedCategory || product.category === selectedCategory;
+                const matchesCategory = !currentCategoryFilter || product.category === currentCategoryFilter;
                 
                 return matchesSearch && matchesCategory;
             });
             
             // ترتيب المنتجات
-            sortProducts(sortBy);
+            sortProducts(currentSortBy);
             
-            // عرض المنتجات بعد التصفية
-            displayProducts();
+            // إعادة تعيين الصفحة وعرض المنتجات
+            displayedProducts = [];
+            currentPage = 0;
+            displayNextProducts();
             
             // تحديث الإحصائيات للمنتجات المصفاة
-            updateStatistics(filteredProducts);
+            updateStatistics(allProducts);
+            
+            // تحديث حالة زر عرض المزيد
+            hasMoreProducts = filteredProducts.length > displayedProducts.length;
+            updateLoadMoreButton();
+        }
+
+        // تصفية المنتجات
+        function filterProducts() {
+            applyCurrentFilters();
             
             // إعادة تهيئة Lazy Loading للصور الجديدة
             setTimeout(initLazyLoading, 100);
@@ -1239,20 +1409,30 @@
             }
         }
 
-        // عرض المنتجات في الجدول
-        function displayProducts() {
+        // عرض المنتجات التالية (10 منتجات)
+        function displayNextProducts() {
             const tableBody = elements.productsTableBody;
             
             if (filteredProducts.length === 0) {
                 tableBody.innerHTML = '';
                 elements.noProductsMessage.style.display = 'block';
+                elements.loadMoreBtn.style.display = 'none';
                 return;
             }
             
             elements.noProductsMessage.style.display = 'none';
             
-            // عرض المنتجات (الكل في صفحة واحدة لتبسيط الأمور)
-            tableBody.innerHTML = filteredProducts.map((product, index) => {
+            // حساب عدد المنتجات التي سيتم عرضها
+            const startIndex = displayedProducts.length;
+            const endIndex = Math.min(startIndex + productsPerPage, filteredProducts.length);
+            
+            // إضافة المنتجات الجديدة إلى displayedProducts
+            const productsToDisplay = filteredProducts.slice(startIndex, endIndex);
+            displayedProducts = [...displayedProducts, ...productsToDisplay];
+            
+            // إنشاء HTML للمنتجات الجديدة
+            const newRowsHtml = productsToDisplay.map((product, index) => {
+                const displayIndex = startIndex + index + 1;
                 const images = product.image || [];
                 const mainImage = images.length > 0 ? images[0] : '';
                 const imageCount = images.length;
@@ -1262,7 +1442,7 @@
                 
                 return `
                     <tr>
-                        <td>${index + 1}</td>
+                        <td>${displayIndex}</td>
                         <td class="product-image-cell">
                             <div class="product-image-container">
                                 ${mainImage ? `
@@ -1323,6 +1503,17 @@
                     </tr>
                 `;
             }).join('');
+            
+            // إضافة الصفوف الجدول (إلحاقها بالصفوف الموجودة)
+            if (startIndex === 0) {
+                tableBody.innerHTML = newRowsHtml;
+            } else {
+                tableBody.insertAdjacentHTML('beforeend', newRowsHtml);
+            }
+            
+            // تحديث حالة زر عرض المزيد
+            hasMoreProducts = filteredProducts.length > displayedProducts.length;
+            updateLoadMoreButton();
             
             // تهيئة Lazy Loading للصور الجديدة
             setTimeout(initLazyLoading, 100);
@@ -1437,9 +1628,14 @@
                 // إزالة المنتج من القائمة المحلية
                 allProducts = allProducts.filter(p => p.id !== productId);
                 filteredProducts = filteredProducts.filter(p => p.id !== productId);
+                displayedProducts = displayedProducts.filter(p => p.id !== productId);
                 
                 // تحديث العرض
-                displayProducts();
+                elements.productsTableBody.innerHTML = '';
+                displayedProducts = [];
+                currentPage = 0;
+                displayNextProducts();
+                
                 updateStatistics(allProducts);
                 
                 showNotification(`✅ تم حذف المنتج "${productName}" بنجاح`, 'success');
@@ -1518,12 +1714,15 @@
             
             // تحديث القائمة
             elements.refreshBtn.addEventListener('click', () => {
-                loadAllProducts();
+                loadInitialProducts();
                 showNotification('جاري تحديث البيانات...', 'info');
             });
             
             // تصدير البيانات
             document.getElementById('exportBtn').addEventListener('click', exportData);
+            
+            // زر عرض المزيد
+            elements.loadMoreBtn.addEventListener('click', loadMoreProducts);
             
             // جعل الدوال متاحة عالمياً للنوافذ المنبثقة
             window.viewProduct = viewProduct;
@@ -1531,6 +1730,7 @@
             window.deleteProduct = deleteProduct;
             window.closeModal = closeModal;
             window.exportData = exportData;
+            window.loadMoreProducts = loadMoreProducts;
         }
 
         // تهيئة التطبيق
@@ -1540,20 +1740,22 @@
             // إعداد مستمعي الأحداث
             setupEventListeners();
             
-            // تحميل البيانات
-            await loadAllProducts();
+            // تحميل البيانات الأولية
+            await loadInitialProducts();
             
             // إخفاء التحميل
             hideLoading();
             
             console.log('✅ نظام عرض المنتجات جاهز للعمل!');
             console.log('🔧 الميزات المتاحة:');
-            console.log('   1. Lazy Loading للصور (توفير في البيانات)');
-            console.log('   2. عرض متعدد الصور للمنتج');
-            console.log('   3. البحث والتصفية المتقدمة');
-            console.log('   4. إحصائيات حية');
-            console.log('   5. تصدير البيانات');
-            console.log('   6. زر إضافة منتج جديد في أعلى الصفحة');
+            console.log('   1. تحميل تدريجي (10 منتجات في المرة)');
+            console.log('   2. زر "عرض المزيد" لتحميل 10 منتجات إضافية');
+            console.log('   3. Lazy Loading للصور (توفير في البيانات)');
+            console.log('   4. عرض متعدد الصور للمنتج');
+            console.log('   5. البحث والتصفية المتقدمة');
+            console.log('   6. إحصائيات حية');
+            console.log('   7. تصدير البيانات');
+            console.log('   8. زر إضافة منتج جديد في أعلى الصفحة');
         }
 
         // بدء التطبيق عند تحميل الصفحة
