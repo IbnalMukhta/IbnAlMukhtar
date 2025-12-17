@@ -6,14 +6,16 @@
     <title id="pageTitle">ابن المختار - عرض المنتج</title>
     
     <meta property="og:type" content="website">
-    <meta property="og:title" id="ogTitle" content="متجر ابن المختار">
-    <meta property="og:description" id="ogDesc" content="تصفح أفضل المنتجات بجودة عالية">
+    <meta property="og:title" id="ogTitle" content="ابن المختار للأدوات المنزلية">
+    <meta property="og:description" id="ogDesc" content="تصفح أفضل الأدوات المنزلية">
     <meta property="og:image" id="ogImage" content="">
     <meta property="og:url" id="ogUrl" content="">
 
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
     <style>
         :root {
             --main-color: #001F3F;
@@ -27,7 +29,7 @@
 
         .container { max-width: 800px; margin: 0 auto; padding: 15px; }
 
-        /* تأثير توهج الزر المركزي */
+        /* تأثير توهج زر عرض كل المنتجات */
         @keyframes glowing-pulse {
             0% { box-shadow: 0 0 5px rgba(255, 140, 0, 0.4); transform: scale(1); }
             50% { box-shadow: 0 0 25px rgba(255, 140, 0, 0.7); transform: scale(1.03); }
@@ -38,16 +40,16 @@
         .back-to-shop-glow {
             text-decoration: none; background: linear-gradient(135deg, var(--main-color), #003366);
             color: #fff; font-weight: 800; display: flex; align-items: center; gap: 12px;
-            padding: 16px 40px; border-radius: 50px; font-size: 18px; border: 2px solid var(--secondary-color);
+            padding: 18px 45px; border-radius: 50px; font-size: 18px; border: 2px solid var(--secondary-color);
             animation: glowing-pulse 2s infinite ease-in-out;
         }
 
-        /* معرض الصور Carousel */
+        /* معرض الصور */
         .carousel-wrapper {
             position: relative; width: 100%; background: #fff; border-radius: var(--radius);
             overflow: hidden; box-shadow: 0 4px 25px rgba(0,0,0,0.08); margin-bottom: 10px;
         }
-        .carousel-container { display: flex; transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94); width: 100%; }
+        .carousel-container { display: flex; transition: transform 0.4s ease; width: 100%; }
         .carousel-item { min-width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; }
         .carousel-item img { width: 100%; height: 100%; object-fit: contain; }
         
@@ -58,12 +60,7 @@
         }
         .prev-btn { right: 10px; } .next-btn { left: 10px; }
 
-        .thumbnails-container { display: flex; gap: 10px; overflow-x: auto; padding: 5px 0 15px; scrollbar-width: none; }
-        .thumbnails-container::-webkit-scrollbar { display: none; }
-        .thumb-item { width: 75px; height: 75px; flex-shrink: 0; border-radius: 12px; overflow: hidden; border: 2.5px solid transparent; transition: 0.3s; background: #fff; }
-        .thumb-item.active { border-color: var(--secondary-color); transform: scale(1.1); }
-        .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
-
+        /* المقاسات */
         .info-card { background: #fff; padding: 25px; border-radius: var(--radius); margin-bottom: 15px; box-shadow: 0 3px 15px rgba(0,0,0,0.03); }
         .product-title { font-size: 24px; font-weight: 800; margin-bottom: 12px; }
         .price-now { font-size: 32px; font-weight: 800; color: var(--secondary-color); }
@@ -72,6 +69,7 @@
         .size-btn { flex: 1; min-width: 110px; padding: 15px; border: 2px solid #f0f0f0; border-radius: 15px; text-align: center; cursor: pointer; }
         .size-btn.active { border-color: var(--secondary-color); background: #fff9f2; color: var(--secondary-color); font-weight: 700; }
 
+        /* الأزرار السفلية */
         .footer-actions {
             position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
             padding: 15px 20px; display: flex; gap: 10px; box-shadow: 0 -10px 30px rgba(0,0,0,0.08); z-index: 1000;
@@ -80,10 +78,11 @@
         .share-btn { flex: 0.7; background: #f0f2f5; color: var(--main-color); border: none; border-radius: 15px; font-size: 22px; cursor: pointer; }
         .wa-btn { flex: 0.7; background: #25D366; color: #fff; border: none; border-radius: 15px; font-size: 26px; cursor: pointer; }
 
+        /* توست السلة */
         .cart-toast {
             position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%) translateY(120px);
             background: rgba(0, 31, 63, 0.98); color: white; padding: 15px 30px;
-            border-radius: 50px; display: flex; align-items: center; gap: 12px; z-index: 2000; transition: 0.4s ease; opacity: 0;
+            border-radius: 50px; z-index: 2000; transition: 0.4s ease; opacity: 0;
         }
         .cart-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     </style>
@@ -97,11 +96,10 @@
             <button class="nav-btn prev-btn" onclick="moveSlide(1)">❯</button>
             <button class="nav-btn next-btn" onclick="moveSlide(-1)">❮</button>
         </div>
-        <div class="thumbnails-container" id="thumbnails"></div>
 
         <div class="center-nav-wrapper">
             <a href="index.html" class="back-to-shop-glow">
-                <i class="fas fa-store"></i>
+                <i class="fas fa-th-large"></i>
                 <span>عرض كل المنتجات</span>
                 <i class="fas fa-chevron-left" style="font-size: 14px;"></i>
             </a>
@@ -132,6 +130,12 @@
 </div>
 
 <script>
+    // إعدادات Supabase (نفس التي في كودك الرئيسي)
+    const SUPABASE_URL = 'https://ukjgzbgzzmlprnhlwgpr.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVramd6Ymd6em1scHJuaGx3Z3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NTM4NzAsImV4cCI6MjA4MTIyOTg3MH0.A-xvwqyDxwxDTeiB8nBgOwrJTPLWenYlO99nxbgobTw';
+    
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const urlParams = new URLSearchParams(window.location.search);
     const productId = urlParams.get('id');
     let productData = null;
@@ -139,96 +143,112 @@
     let currentIndex = 0;
 
     async function init() {
-        const allProducts = JSON.parse(localStorage.getItem('allProducts') || '[]');
-        productData = allProducts.find(p => p.id == productId);
+        if (!productId) {
+            window.location.href = 'index.html';
+            return;
+        }
 
-        if (!productData) {
+        // جلب المنتج مباشرة من Supabase لضمان ظهوره عند المشاركة
+        const { data, error } = await _supabase
+            .from('products')
+            .select('*')
+            .eq('id', productId)
+            .single();
+
+        if (error || !data) {
             document.body.innerHTML = "<div style='text-align:center; margin-top:100px;'><h2>المنتج غير موجود</h2><a href='index.html'>العودة للمتجر</a></div>";
             return;
         }
+
+        productData = data;
         render();
-        updateMetaTags(); // تحديث وسوم المعاينة
+        updateMetaTags();
     }
 
     function updateMetaTags() {
         const img = Array.isArray(productData.image) ? productData.image[0] : productData.image;
-        const title = productData.name + " - ابن المختار";
-        const desc = productData.description ? productData.description.substring(0, 150) : "تصفح هذا المنتج الرائع في متجرنا";
-
-        // تحديث العنوان الفعلي للصفحة
-        document.title = title;
-        
-        // تحديث وسوم OG للمشاركة
-        document.getElementById('ogTitle').setAttribute('content', title);
-        document.getElementById('ogDesc').setAttribute('content', desc);
+        document.title = productData.name + " - ابن المختار";
+        document.getElementById('ogTitle').setAttribute('content', productData.name);
         document.getElementById('ogImage').setAttribute('content', img);
         document.getElementById('ogUrl').setAttribute('content', window.location.href);
     }
 
     function render() {
         document.getElementById('title').innerText = productData.name;
-        document.getElementById('description').innerText = productData.description || "منتج عالي الجودة من متجرنا.";
+        document.getElementById('description').innerText = productData.description || "أفضل الأدوات المنزلية من ابن المختار.";
 
+        // السعر
+        document.getElementById('priceDisplay').innerText = Number(productData.price).toLocaleString();
+
+        // الصور
         const imgs = Array.isArray(productData.image) ? productData.image : [productData.image];
         const carousel = document.getElementById('carousel');
-        const thumbs = document.getElementById('thumbnails');
-
         carousel.innerHTML = imgs.map(img => `<div class="carousel-item"><img src="${img}"></div>`).join('');
 
-        if (imgs.length > 1) {
-            thumbs.innerHTML = imgs.map((img, i) => `
-                <div class="thumb-item ${i === 0 ? 'active' : ''}" onclick="goToSlide(${i})">
-                    <img src="${img}">
-                </div>
-            `).join('');
-        }
+        // المقاسات
+        let sizes = [];
+        try {
+            sizes = typeof productData.sizes === 'string' ? JSON.parse(productData.sizes) : productData.sizes;
+        } catch(e) { sizes = []; }
 
-        if (productData.sizes && productData.sizes.length > 0) {
+        if (sizes && sizes.length > 0) {
             document.getElementById('sizesSection').style.display = 'block';
             const list = document.getElementById('sizesList');
-            list.innerHTML = productData.sizes.map((s, i) => `
-                <div class="size-btn" id="s-${i}" onclick="selectSize(${i})">
+            list.innerHTML = sizes.map((s, i) => `
+                <div class="size-btn" id="s-${i}" onclick="selectSize(${i}, ${JSON.stringify(s).replace(/"/g, '&quot;')})">
                     <strong>${s.name}</strong><br><small>${Number(s.price).toLocaleString()} ر.ي</small>
                 </div>
             `).join('');
-            selectSize(0);
-        } else {
-            updatePrice(productData.price);
+            selectSize(0, sizes[0]);
         }
     }
 
-    function goToSlide(idx) {
-        currentIndex = idx;
-        const carousel = document.getElementById('carousel');
-        carousel.style.transform = `translateX(${currentIndex * 100}%)`;
-        document.querySelectorAll('.thumb-item').forEach((t, i) => t.classList.toggle('active', i === currentIndex));
+    function selectSize(idx, sizeObj) {
+        selectedSize = sizeObj;
+        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(`s-${idx}`).classList.add('active');
+        document.getElementById('priceDisplay').innerText = Number(sizeObj.price).toLocaleString();
     }
 
     function moveSlide(step) {
         const total = document.querySelectorAll('.carousel-item').length;
-        goToSlide((currentIndex + step + total) % total);
+        currentIndex = (currentIndex + step + total) % total;
+        document.getElementById('carousel').style.transform = `translateX(${currentIndex * 100}%)`;
     }
 
-    function selectSize(idx) {
-        selectedSize = productData.sizes[idx];
-        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(`s-${idx}`).classList.add('active');
-        updatePrice(selectedSize.price);
+    function addToCart() {
+        let cart = JSON.parse(localStorage.getItem("cart") || "[]");
+        const price = selectedSize ? selectedSize.price : productData.price;
+        const sizeName = selectedSize ? selectedSize.name : null;
+
+        cart.push({
+            id: productData.id,
+            name: productData.name,
+            price: price,
+            qty: 1,
+            sizeName: sizeName,
+            image: Array.isArray(productData.image) ? productData.image[0] : productData.image
+        });
+
+        localStorage.setItem("cart", JSON.stringify(cart));
+        showToast();
     }
 
-    function updatePrice(p) {
-        document.getElementById('priceDisplay').innerText = Number(p).toLocaleString();
+    function showToast() {
+        const toast = document.createElement('div');
+        toast.className = 'cart-toast';
+        toast.innerHTML = `✓ تمت الإضافة للسلة`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 50);
+        setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 500); }, 2500);
     }
 
     function shareProduct() {
-        const shareData = {
-            title: productData.name,
-            text: `شاهد ${productData.name} في متجر ابن المختار`,
-            url: window.location.href
-        };
-
         if (navigator.share) {
-            navigator.share(shareData).catch(console.error);
+            navigator.share({
+                title: productData.name,
+                url: window.location.href
+            });
         } else {
             const el = document.createElement('textarea');
             el.value = window.location.href;
@@ -236,7 +256,7 @@
             el.select();
             document.execCommand('copy');
             document.body.removeChild(el);
-            alert('تم نسخ رابط المنتج بنجاح!');
+            alert('تم نسخ رابط المنتج لمشاركته!');
         }
     }
 
@@ -244,21 +264,6 @@
         const p = document.getElementById('priceDisplay').innerText;
         const msg = `أرغب في طلب: *${productData.name}*\nالسعر: ${p} ر.ي\nالرابط: ${window.location.href}`;
         window.open(`https://wa.me/967773266534?text=${encodeURIComponent(msg)}`);
-    }
-
-    function addToCart() {
-        let cart = JSON.parse(localStorage.getItem("cart") || "[]");
-        const finalPrice = selectedSize ? Number(selectedSize.price) : Number(productData.price);
-        const img = Array.isArray(productData.image) ? productData.image[0] : productData.image;
-        cart.push({ id: productData.id, name: productData.name, price: finalPrice, qty: 1, image: img });
-        localStorage.setItem("cart", JSON.stringify(cart));
-        
-        const toast = document.createElement('div');
-        toast.className = 'cart-toast';
-        toast.innerHTML = `<i class="fas fa-check-circle"></i> تمت الإضافة للسلة`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.classList.add('show'), 50);
-        setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 500); }, 2500);
     }
 
     init();
