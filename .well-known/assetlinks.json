@@ -1,0 +1,15 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "io.github.ibnalmukhta.twa",
+      "sha256_cert_fingerprints": [
+        "28:34:F0:A8:61:4E:65:74:B6:1F:67:34:64:21:F1:86:D5:6C:4A:07:E5:B9:39:8A:C9:D1:5D:35:41:F5:88:B6"
+      ]
+    }
+  }
+]
