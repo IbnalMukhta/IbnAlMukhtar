@@ -596,6 +596,39 @@
             object-fit:cover; 
         }
         
+        /* أنماط أزرار المقاسات */
+        .size-option-btn {
+            transition: all 0.3s ease;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        
+        .size-option-btn:hover {
+            border-color: var(--secondary-color);
+            color: var(--secondary-color);
+        }
+        
+        .size-option-btn.selected {
+            background: var(--secondary-color) !important;
+            border-color: var(--secondary-color) !important;
+            color: #fff !important;
+            font-weight: 700 !important;
+        }
+        
+        .dark .size-option-btn {
+            background: #001a35;
+            border-color: #1a3a5c;
+            color: #e6e6e6;
+        }
+        
+        .dark .size-option-btn:hover {
+            border-color: var(--secondary-color);
+        }
+        
         /* Scroll to top button */
         #scrollTopBtn{ 
             position:fixed; 
@@ -1391,6 +1424,87 @@
             handleSearch('');
         };
 
+        /* ====================== نظام المقاسات ====================== */
+
+        // دالة لاستخراج أقل سعر من المقاسات
+        function getMinimumPriceFromSizes(sizes) {
+            if (!sizes || !Array.isArray(sizes) || sizes.length === 0) {
+                return null;
+            }
+            
+            let minPrice = Infinity;
+            let hasValidPrice = false;
+            
+            sizes.forEach(size => {
+                if (size && size.price && !isNaN(parseFloat(size.price))) {
+                    const price = parseFloat(size.price);
+                    if (price < minPrice) {
+                        minPrice = price;
+                        hasValidPrice = true;
+                    }
+                }
+            });
+            
+            return hasValidPrice ? minPrice : null;
+        }
+
+        // دالة لعرض السعر في كرت المنتج
+        function displayProductPrice(product, displayCurrency) {
+            let priceHTML = '';
+            
+            // التحقق إذا كان المنتج يحتوي على مقاسات
+            const hasSizes = product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0;
+            
+            if (hasSizes) {
+                // حساب أقل سعر من المقاسات
+                const minPrice = getMinimumPriceFromSizes(product.sizes);
+                
+                if (minPrice !== null) {
+                    // تحويل السعر حسب العملة
+                    let displayPrice = minPrice;
+                    if (currentCurrency === 'SAR') {
+                        displayPrice = Math.ceil(minPrice / SAR_RATE);
+                    }
+                    
+                    priceHTML = `
+                        <div class="price-area">
+                            <span class="currency">${displayCurrency}</span>
+                            <span class="price">${displayPrice.toLocaleString()}</span>
+                            <span style="font-size: 12px; color: #666; margin-right: 5px;">(يبدأ من)</span>
+                        </div>
+                    `;
+                } else {
+                    // إذا لم يكن هناك أسعار صالحة في المقاسات
+                    let displayPrice = parseFloat(product.price) || 0;
+                    if (currentCurrency === 'SAR') {
+                        displayPrice = Math.ceil(displayPrice / SAR_RATE);
+                    }
+                    
+                    priceHTML = `
+                        <div class="price-area">
+                            <span class="currency">${displayCurrency}</span>
+                            <span class="price">${displayPrice.toLocaleString()}</span>
+                        </div>
+                    `;
+                }
+            } else {
+                // المنتج بدون مقاسات
+                let displayPrice = parseFloat(product.price) || 0;
+                if (currentCurrency === 'SAR') {
+                    displayPrice = Math.ceil(displayPrice / SAR_RATE);
+                }
+                
+                priceHTML = `
+                    <div class="price-area">
+                        <span class="currency">${displayCurrency}</span>
+                        <span class="price">${displayPrice.toLocaleString()}</span>
+                    </div>
+                `;
+            }
+            
+            return priceHTML;
+        }
+
         /* ====================== Render & Draw ====================== */
         window.renderProducts = function(){
             if (renderTimeout) {
@@ -1519,9 +1633,12 @@
                 <div class="card-image-wrapper" data-id="${p.id}" onclick="openProductPage('${p.id}')">
                     ${imgTag}
                     ${isNew ? '<div class="new-badge">جديد</div>' : ''}
-                    <div class="add-fab" title="أضف للسلة" onclick="event.stopPropagation(); addToCart('${p.id}'); showAddedToCartMessage('${p.name}')">+</div>
+                    <div class="add-fab" title="أضف للسلة" onclick="event.stopPropagation(); handleAddToCart('${p.id}');">+</div>
                 </div>
             `;
+            
+            // استخدام دالة عرض السعر الجديدة
+            const priceHTML = displayProductPrice(p, displayCurrency);
             
             const actionBtns = `
                 <div class="action-btns-wrapper">
@@ -1530,7 +1647,7 @@
                         👁️ مشاهدة سريعة
                     </button>
                     <button style="flex:1; border-radius:8px; border:0; background:var(--main-color); color:#fff; cursor:pointer; padding:8px;" 
-                            onclick="event.stopPropagation(); addToCart('${p.id}'); showAddedToCartMessage('${p.name}')">
+                            onclick="event.stopPropagation(); handleAddToCart('${p.id}')">
                         أضف للسلة
                     </button>
                 </div>
@@ -1540,10 +1657,7 @@
                 ${imageWrapper}
                 <div class="card-body" onclick="openProductPage('${p.id}')">
                     <div class="name">${p.name || 'منتج'}</div>
-                    <div class="price-area">
-                        <span class="currency">${displayCurrency}</span>
-                        <span class="price">${displayPrice.toLocaleString()}</span>
-                    </div>
+                    ${priceHTML}
                     <div style="display:flex; align-items:center; margin-top:6px;">
                         <span class="old-price-small">${displayOld.toLocaleString()} ${displayCurrency}</span>
                         <span class="discount-tag">-30%</span>
@@ -1555,46 +1669,277 @@
             return card;
         }
 
-        /* ====================== إدارة السلة - الإصلاحات ====================== */
-        window.addToCart = function(id){
-            // تحديث السلة من localStorage أولاً
-            cart = JSON.parse(localStorage.getItem("cart") || "[]") || [];
+        /* ====================== المشاهدة السريعة مع المقاسات ====================== */
+        function quickView(product){
+            const imgs = Array.isArray(product.image) ? product.image : [];
+            const primaryImgSrc = imgs[0] || null;
+
+            // التحقق إذا كان المنتج يحتوي على مقاسات
+            const hasSizes = product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0;
+            let selectedSize = null;
+            let selectedPrice = parseFloat(product.price) || 0;
             
-            // البحث عن بيانات المنتج من allProducts
-            const product = (window.allProducts || []).find(x => x.id == id);
+            // إذا كان هناك مقاسات، احسب أقل سعر كقيمة افتراضية
+            if (hasSizes) {
+                const minPrice = getMinimumPriceFromSizes(product.sizes);
+                if (minPrice !== null) {
+                    selectedPrice = minPrice;
+                }
+            }
             
-            if (!product) {
-                console.error('المنتج غير موجود:', id);
+            let displayPrice = selectedPrice;
+            let displayCurrency = 'ر.ي';
+
+            if (currentCurrency === 'SAR') {
+                displayPrice = Math.ceil(selectedPrice / SAR_RATE);
+                displayCurrency = 'ر.س';
+            }
+
+            // التحقق إذا كان المنتج جديداً
+            const isNew = isProductNew(product);
+            
+            // ✅ إصلاح تحميل الصور في Quick View - استخدام تحميل فوري
+            let quickViewImage;
+            if (primaryImgSrc) {
+                // تحميل الصورة فورياً مع placeholder
+                quickViewImage = `<img id="quickViewImg" src="${primaryImgSrc}" alt="${product.name||''}" style="opacity:0;" onload="this.style.opacity='1'">`;
+            } else {
+                quickViewImage = `<img src="${getPlaceholderSVG()}" alt="${product.name||''}">`;
+            }
+            
+            // بناء واجهة المقاسات إذا كان المنتج يحتويها
+            let sizesHTML = '';
+            if (hasSizes) {
+                sizesHTML = `
+                    <div style="margin: 15px 0; border-top: 1px solid #eee; padding-top: 15px;">
+                        <div style="font-weight: 700; color: var(--main-color); margin-bottom: 10px; font-size: 14px;">
+                            <i class="fas fa-ruler-combined"></i> اختر المقاس:
+                        </div>
+                        <div id="quickViewSizes" style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 15px;">
+                            ${product.sizes.map((size, index) => {
+                                const sizePrice = parseFloat(size.price) || 0;
+                                let displaySizePrice = sizePrice;
+                                if (currentCurrency === 'SAR') {
+                                    displaySizePrice = Math.ceil(sizePrice / SAR_RATE);
+                                }
+                                
+                                return `
+                                    <button class="size-option-btn" 
+                                            data-size-index="${index}"
+                                            data-size-name="${size.name || ''}"
+                                            data-size-price="${sizePrice}"
+                                            onclick="selectQuickViewSize('${product.id}', ${index}, '${size.name || ''}', ${sizePrice})"
+                                            style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 13px; transition: all 0.3s;">
+                                        ${size.name || 'مقاس'} - ${displaySizePrice.toLocaleString()} ${displayCurrency}
+                                    </button>
+                                `;
+                            }).join('')}
+                        </div>
+                        <div id="sizeSelectionMessage" style="font-size: 12px; color: #666; margin-bottom: 10px; display: none;">
+                            ⚠️ يرجى اختيار مقاس قبل إضافة المنتج للسلة
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // زر الإضافة للسلة - مختلف حسب وجود المقاسات
+            let addToCartButtonHTML = '';
+            if (hasSizes) {
+                addToCartButtonHTML = `
+                    <button id="quickViewAddToCartBtn" 
+                            style="width:100%; padding:12px; border-radius:8px; border:0; background:#ccc; color:#666; font-weight:800; font-size:16px; cursor:not-allowed;"
+                            onclick="addSelectedSizeToCart('${product.id}')"
+                            disabled>
+                        اختر مقاساً أولاً
+                    </button>
+                `;
+            } else {
+                addToCartButtonHTML = `
+                    <button style="width:100%; padding:12px; border-radius:8px; border:0; background:var(--secondary-color); color:#fff; font-weight:800; font-size:16px; cursor:pointer;" 
+                            onclick="addToCart('${product.id}'); closeQuickView(); showAddedToCartMessage('${product.name}');">
+                        أضف للسلة
+                    </button>
+                `;
+            }
+
+            quickViewBox.innerHTML = `
+                <div style="position:relative; background:white; border-radius:var(--radius); max-width:95vw; width:350px; max-height:85vh; overflow-y:auto; animation:zoomIn .15s ease forwards; margin:auto;">
+                    <button onclick="closeQuickView()" style="position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.3); color:white; border:none; border-radius:50%; width:30px; height:30px; font-size:16px; cursor:pointer; z-index:10;">✕</button>
+                    <div class="quick-view-img-wrapper">
+                        ${quickViewImage}
+                        ${isNew ? '<div class="new-badge">جديد</div>' : ''}
+                    </div>
+                    <div style="padding:16px;">
+                        <h3 style="margin:0 0 10px 0; color:var(--main-color); font-size:16px;">${product.name || ''}</h3>
+                        <div id="quickViewPrice" style="font-size:22px; color:var(--secondary-color); font-weight:800; margin-bottom:15px;">
+                            ${displayPrice.toLocaleString()} ${displayCurrency}
+                            ${hasSizes ? '<span style="font-size: 14px; color: #666;">(يبدأ من)</span>' : ''}
+                        </div>
+                        <div style="color:#666; font-size:14px; line-height:1.5; margin-bottom:20px;">${product.description || 'منتج عالي الجودة من ابن المختار للأدوات المنزلية'}</div>
+                        
+                        ${sizesHTML}
+                        
+                        <div style="margin-top:20px; display:flex; gap:10px; flex-direction:column;">
+                            ${addToCartButtonHTML}
+                            <button style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--main-color); background:#fff; color:var(--main-color); font-weight:700; font-size:16px; cursor:pointer;" 
+                                    onclick="openProductPage('${product.id}');">
+                                عرض كامل المنتج
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // تخزين بيانات المنتج في العنصر للوصول السريع
+            quickViewBox.dataset.productId = product.id;
+            quickViewBox.dataset.productName = product.name || '';
+            quickViewBox.dataset.hasSizes = hasSizes;
+            quickViewBox.dataset.selectedSizeIndex = '-1';
+            quickViewBox.dataset.selectedSizeName = '';
+            quickViewBox.dataset.selectedSizePrice = selectedPrice;
+            
+            quickViewEl.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            
+            // ✅ إصلاح: تأكد من تحميل الصورة
+            setTimeout(() => {
+                const quickViewImg = document.getElementById('quickViewImg');
+                if (quickViewImg) {
+                    quickViewImg.style.transition = 'opacity 0.3s ease';
+                    quickViewImg.style.opacity = '1';
+                }
+            }, 50);
+        }
+
+        window.quickViewById = function(id){
+            const p = (window.allProducts || []).find(x => x.id === id);
+            if(!p) return quickView({ id, name: 'منتج', price: 0, image: null });
+            quickView(p);
+        }
+
+        window.closeQuickView = function(){
+            quickViewEl.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // دالة لاختيار مقاس في المشاهدة السريعة
+        window.selectQuickViewSize = function(productId, sizeIndex, sizeName, sizePrice) {
+            // تحديث أزرار المقاسات
+            document.querySelectorAll('.size-option-btn').forEach(btn => {
+                btn.style.background = '#fff';
+                btn.style.borderColor = '#ddd';
+                btn.style.color = '#333';
+                btn.style.fontWeight = 'normal';
+            });
+            
+            // تمييز المقاس المختار
+            const selectedBtn = document.querySelector(`.size-option-btn[data-size-index="${sizeIndex}"]`);
+            if (selectedBtn) {
+                selectedBtn.style.background = 'var(--secondary-color)';
+                selectedBtn.style.borderColor = 'var(--secondary-color)';
+                selectedBtn.style.color = '#fff';
+                selectedBtn.style.fontWeight = '700';
+            }
+            
+            // تحديث السعر المعروض
+            let displayPrice = sizePrice;
+            let displayCurrency = 'ر.ي';
+            if (currentCurrency === 'SAR') {
+                displayPrice = Math.ceil(sizePrice / SAR_RATE);
+                displayCurrency = 'ر.س';
+            }
+            
+            document.getElementById('quickViewPrice').innerHTML = `
+                ${displayPrice.toLocaleString()} ${displayCurrency}
+                <span style="font-size: 14px; color: #666;">(المقاس: ${sizeName})</span>
+            `;
+            
+            // تفعيل زر الإضافة للسلة
+            const addToCartBtn = document.getElementById('quickViewAddToCartBtn');
+            if (addToCartBtn) {
+                addToCartBtn.disabled = false;
+                addToCartBtn.style.background = 'var(--secondary-color)';
+                addToCartBtn.style.color = '#fff';
+                addToCartBtn.style.cursor = 'pointer';
+                addToCartBtn.textContent = `أضف للسلة - ${displayPrice.toLocaleString()} ${displayCurrency}`;
+            }
+            
+            // إخفاء رسالة الاختيار
+            const sizeMessage = document.getElementById('sizeSelectionMessage');
+            if (sizeMessage) {
+                sizeMessage.style.display = 'none';
+            }
+            
+            // تحديث البيانات المخزنة
+            quickViewBox.dataset.selectedSizeIndex = sizeIndex;
+            quickViewBox.dataset.selectedSizeName = sizeName;
+            quickViewBox.dataset.selectedSizePrice = sizePrice;
+        };
+
+        // دالة لإضافة المنتج مع المقاس المختار إلى السلة
+        window.addSelectedSizeToCart = function(productId) {
+            const hasSizes = quickViewBox.dataset.hasSizes === 'true';
+            const selectedSizeIndex = parseInt(quickViewBox.dataset.selectedSizeIndex);
+            
+            if (hasSizes && selectedSizeIndex === -1) {
+                // عرض رسالة للمستخدم لاختيار مقاس
+                const sizeMessage = document.getElementById('sizeSelectionMessage');
+                if (sizeMessage) {
+                    sizeMessage.style.display = 'block';
+                    sizeMessage.style.color = 'var(--danger)';
+                    sizeMessage.innerHTML = '⚠️ يرجى اختيار مقاس قبل إضافة المنتج للسلة';
+                }
                 return;
             }
             
-            // البحث عن المنتج في السلة
-            let item = cart.find(p => p.id == id);
+            // الحصول على بيانات المنتج
+            const product = (window.allProducts || []).find(x => x.id == productId);
+            if (!product) return;
             
-            if(item) {
-                item.qty = (item.qty || 0) + 1;
+            // إضافة المنتج للسلة مع بيانات المقاس
+            addToCartWithSize(productId, product.name || 'منتج', 
+                             quickViewBox.dataset.selectedSizePrice, 
+                             quickViewBox.dataset.selectedSizeName);
+            
+            // إغلاق نافذة المشاهدة السريعة
+            closeQuickView();
+            
+            // عرض رسالة التأكيد
+            const sizeInfo = quickViewBox.dataset.selectedSizeName ? 
+                            ` (المقاس: ${quickViewBox.dataset.selectedSizeName})` : '';
+            showAddedToCartMessage((product.name || 'منتج') + sizeInfo);
+        };
+
+        /* ====================== إدارة السلة مع المقاسات ====================== */
+
+        // دالة جديدة للإضافة إلى السلة مع المقاس
+        window.addToCartWithSize = function(id, name, price, sizeName) {
+            // تحديث السلة من localStorage أولاً
+            cart = JSON.parse(localStorage.getItem("cart") || "[]") || [];
+            
+            // البحث عن المنتج في السلة
+            let itemIndex = cart.findIndex(p => p.id == id && p.sizeName == sizeName);
+            
+            if (itemIndex !== -1) {
+                // زيادة الكمية إذا كان نفس المنتج بنفس المقاس
+                cart[itemIndex].qty = (cart[itemIndex].qty || 0) + 1;
             } else {
+                // إضافة منتج جديد مع المقاس
                 cart.push({ 
-                    id: product.id, 
-                    name: product.name || 'منتج', 
-                    price: product.price || "0", 
-                    qty: 1 
+                    id: id, 
+                    name: name, 
+                    price: price, 
+                    qty: 1,
+                    sizeName: sizeName || null,
+                    hasSize: !!sizeName
                 });
             }
             
             saveCart();
             updateCartBadge();
             updateCartTotalDisplay();
-            
-            // إظهار رسالة التأكيد
-            showAddedToCartMessage(product.name || 'منتج');
-            
-            // اهتزاز إذا كان متاحاً
-            if (navigator.vibrate) {
-                navigator.vibrate(40);
-            }
-        }
-        
+        };
+
         window.showAddedToCartMessage = function(productName){
             const msg = document.createElement('div');
             msg.innerHTML = `
@@ -1609,14 +1954,71 @@
             }, 2000);
         }
         
-        window.changeQty = function(id, delta){
-            cart = JSON.parse(localStorage.getItem("cart")||"[]") || cart;
-            let item = cart.find(i => i.id == id);
-            if(!item) return;
+        window.handleAddToCart = function(id) {
+            // تحديث السلة من localStorage أولاً
+            cart = JSON.parse(localStorage.getItem("cart") || "[]") || [];
             
+            // البحث عن بيانات المنتج من allProducts
+            const product = (window.allProducts || []).find(x => x.id == id);
+            
+            if (!product) {
+                console.error('المنتج غير موجود:', id);
+                return;
+            }
+            
+            // التحقق إذا كان المنتج يحتوي على مقاسات
+            const hasSizes = product.sizes && Array.isArray(product.sizes) && product.sizes.length > 0;
+            
+            if (hasSizes) {
+                // إذا كان المنتج يحتوي مقاسات، افتح المشاهدة السريعة لاختيار المقاس
+                quickView(product);
+                
+                // عرض رسالة توجيهية
+                setTimeout(() => {
+                    const sizeMessage = document.getElementById('sizeSelectionMessage');
+                    if (sizeMessage) {
+                        sizeMessage.style.display = 'block';
+                        sizeMessage.style.color = 'var(--info)';
+                        sizeMessage.innerHTML = 'ℹ️ هذا المنتج يحتوي على مقاسات، يرجى اختيار مقاس من الأعلى';
+                    }
+                }, 300);
+            } else {
+                // إذا كان المنتج لا يحتوي مقاسات، أضفه مباشرة
+                addToCartWithSize(id, product.name || 'منتج', product.price || "0", null);
+                
+                // عرض رسالة التأكيد
+                showAddedToCartMessage(product.name || 'منتج');
+                
+                // اهتزاز إذا كان متاحاً
+                if (navigator.vibrate) {
+                    navigator.vibrate(40);
+                }
+            }
+        };
+
+        // الحفاظ على الدالة الأصلية لأغراض التوافق
+        window.addToCart = function(id) {
+            handleAddToCart(id);
+        };
+
+        window.changeQty = function(id, delta, sizeName){
+            cart = JSON.parse(localStorage.getItem("cart")||"[]") || cart;
+            
+            // البحث عن العنصر مع مراعاة المقاس
+            let itemIndex = -1;
+            if (sizeName) {
+                itemIndex = cart.findIndex(i => i.id == id && i.sizeName == sizeName);
+            } else {
+                itemIndex = cart.findIndex(i => i.id == id && !i.sizeName);
+            }
+            
+            if(itemIndex === -1) return;
+            
+            let item = cart[itemIndex];
             item.qty = (item.qty || 1) + delta;
+            
             if(item.qty <= 0) {
-                cart = cart.filter(i => i.id != id);
+                cart.splice(itemIndex, 1);
             }
             
             saveCart();
@@ -1854,7 +2256,9 @@
                 const productName = originalProduct ? originalProduct.name : (item.name || "منتج");
                 const productPrice = originalProduct ? originalProduct.price : (item.price || "0");
                 
-                let rawPrice = productPrice.toString().replace(/[^0-9.]/g,'');
+                // استخدام سعر المقاس إذا كان محدداً
+                let rawPrice = (item.sizeName && item.price) ? item.price.toString().replace(/[^0-9.]/g,'') : 
+                               productPrice.toString().replace(/[^0-9.]/g,'');
                 let priceVal = parseFloat(rawPrice) || 0;
                 let itemTotal = priceVal * (item.qty || 0);
                 productSubTotal += itemTotal;
@@ -1872,10 +2276,14 @@
                     displayCurrency = 'ر.س';
                 }
 
+                // عرض اسم المقاس إذا كان موجوداً
+                const sizeInfo = item.sizeName ? `<div style="font-size: 12px; color: #666; margin-top: 3px;">المقاس: ${item.sizeName}</div>` : '';
+                
                 cartItemsContainer.innerHTML += `
                     <div class="cart-item">
                         <div class="cart-item-info">
                             <div class="cart-item-name">${productName}</div>
+                            ${sizeInfo}
                             <div class="cart-item-price">
                                 <span>السعر: ${itemDisplayPrice}</span>
                                 <span>الكمية: ${item.qty || 1}</span>
@@ -1883,9 +2291,9 @@
                             </div>
                         </div>
                         <div class="cart-qty-controls">
-                            <button class="qty-btn" onclick="changeQty('${item.id}', -1)" title="تقليل الكمية">-</button>
+                            <button class="qty-btn" onclick="changeQty('${item.id}', -1, '${item.sizeName || ''}')" title="تقليل الكمية">-</button>
                             <div class="qty-display">${item.qty || 1}</div>
-                            <button class="qty-btn" onclick="changeQty('${item.id}', 1)" title="زيادة الكمية">+</button>
+                            <button class="qty-btn" onclick="changeQty('${item.id}', 1, '${item.sizeName || ''}')" title="زيادة الكمية">+</button>
                         </div>
                     </div>
                 `;
@@ -1973,7 +2381,7 @@
             updateCartTotalDisplay();
         };
 
-        /* ====================== إرسال الطلب عبر واتساب ====================== */
+        /* ====================== إرسال الطلب عبر واتساب مع المقاسات ====================== */
         window.sendCart = function(){
             cart = JSON.parse(localStorage.getItem("cart")||"[]") || cart;
             if(cart.length === 0) return;
@@ -1999,6 +2407,9 @@
                 }
                 
                 msg += `${idx+1}. ${i.name}\n`;
+                if (i.sizeName) {
+                    msg += `   المقاس: ${i.sizeName}\n`;
+                }
                 msg += `   الكمية: ${i.qty}\n`;
                 msg += `   السعر للواحدة: ${displayPrice}\n`;
                 msg += `   الإجمالي: ${displayItemTotal}\n`;
@@ -2076,84 +2487,80 @@
             window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
         };
 
-        /* ====================== Quick View - تم التصليح ====================== */
-        window.quickViewById = function(id){
-            const p = (window.allProducts || []).find(x => x.id === id);
-            if(!p) return quickView({ id, name: 'منتج', price: 0, image: null });
-            quickView(p);
-        }
-
-        function quickView(product){
-            const imgs = Array.isArray(product.image) ? product.image : [];
-            const primaryImgSrc = imgs[0] || null;
-
-            let rawPrice = (product.price || "").toString().replace(/[^0-9.]/g, '');
-            let priceVal = parseFloat(rawPrice) || 0;
-            let displayPrice = priceVal.toLocaleString();
-            let displayCurrency = 'ر.ي';
-
-            if (currentCurrency === 'SAR') {
-                displayPrice = Math.ceil(priceVal / SAR_RATE).toLocaleString();
-                displayCurrency = 'ر.س';
-            }
-
-            // التحقق إذا كان المنتج جديداً
-            const isNew = isProductNew(product);
+        /* ====================== جلب المنتجات من Supabase مع المقاسات ====================== */
+        async function fetchAllProducts() {
+            console.log('🔄 محاولة جلب جميع المنتجات مرة واحدة...');
             
-            // ✅ إصلاح تحميل الصور في Quick View - استخدام تحميل فوري
-            let quickViewImage;
-            if (primaryImgSrc) {
-                // تحميل الصورة فورياً مع placeholder
-                quickViewImage = `<img id="quickViewImg" src="${primaryImgSrc}" alt="${product.name||''}" style="opacity:0;" onload="this.style.opacity='1'">`;
-            } else {
-                quickViewImage = `<img src="${getPlaceholderSVG()}" alt="${product.name||''}">`;
-            }
-
-            quickViewBox.innerHTML = `
-                <div style="position:relative; background:white; border-radius:var(--radius); max-width:95vw; width:320px; max-height:85vh; overflow-y:auto; animation:zoomIn .15s ease forwards; margin:auto;">
-                    <button onclick="closeQuickView()" style="position:absolute; top:10px; left:10px; background:rgba(0,0,0,0.3); color:white; border:none; border-radius:50%; width:30px; height:30px; font-size:16px; cursor:pointer; z-index:10;">✕</button>
-                    <div class="quick-view-img-wrapper">
-                        ${quickViewImage}
-                        ${isNew ? '<div class="new-badge">جديد</div>' : ''}
-                    </div>
-                    <div style="padding:16px;">
-                        <h3 style="margin:0 0 10px 0; color:var(--main-color); font-size:16px;">${product.name || ''}</h3>
-                        <div style="font-size:22px; color:var(--secondary-color); font-weight:800; margin-bottom:15px;">${displayPrice} ${displayCurrency}</div>
-                        <div style="color:#666; font-size:14px; line-height:1.5; margin-bottom:20px;">منتج عالي الجودة من ابن المختار للأدوات المنزلية</div>
-                        <div style="margin-top:20px; display:flex; gap:10px; flex-direction:column;">
-                            <button style="width:100%; padding:12px; border-radius:8px; border:0; background:var(--secondary-color); color:#fff; font-weight:800; font-size:16px; cursor:pointer;" 
-                                    onclick="addToCart('${product.id}'); closeQuickView(); showAddedToCartMessage('${product.name}');">
-                                أضف للسلة
-                            </button>
-                            <button style="width:100%; padding:12px; border-radius:8px; border:1px solid var(--main-color); background:#fff; color:var(--main-color); font-weight:700; font-size:16px; cursor:pointer;" 
-                                    onclick="openProductPage('${product.id}');">
-                                عرض كامل المنتج
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            quickViewBox.dataset.productId = product.id; 
-            quickViewEl.style.display = 'flex';
-            document.body.style.overflow = 'hidden';
-            
-            // ✅ إصلاح: تأكد من تحميل الصورة
-            setTimeout(() => {
-                const quickViewImg = document.getElementById('quickViewImg');
-                if (quickViewImg) {
-                    quickViewImg.style.transition = 'opacity 0.3s ease';
-                    quickViewImg.style.opacity = '1';
+            try {
+                if (sb) {
+                    // محاولة جلب جميع المنتجات بدون حدود
+                    const { data: products, error } = await sb
+                        .from('products')
+                        .select('// بدلاً من .select('*')
+const { data: products, error } = await sb
+    .from('products')
+    .select('id, name, price, image, category, sizes') // لا تجلب الوصف هنا
+    .order('created_at', { ascending: false });
+')
+                        .order('created_at', { ascending: false });
+                    
+                    if (error) {
+                        console.error('❌ خطأ في جلب جميع المنتجات:', error);
+                        return false;
+                    }
+                    
+                    if (products && Array.isArray(products) && products.length > 0) {
+                        window.allProducts = products.map(product => {
+                            // معالجة المقاسات - قد تكون JSON string أو array
+                            let sizesData = null;
+                            if (product.sizes) {
+                                try {
+                                    // إذا كان المقاسات مخزنة كـ JSON string
+                                    if (typeof product.sizes === 'string') {
+                                        sizesData = JSON.parse(product.sizes);
+                                    } else {
+                                        sizesData = product.sizes;
+                                    }
+                                } catch (e) {
+                                    console.warn('⚠️ خطأ في تحليل بيانات المقاسات:', e);
+                                    sizesData = null;
+                                }
+                            }
+                            
+                            return {
+                                id: product.id.toString(),
+                                name: product.name || product.title || 'منتج',
+                                price: parseFloat(product.price) || 0,
+                                category: product.category || 'عام',
+                                image: Array.isArray(product.image) ? product.image : 
+                                       (product.image ? [product.image] : []),
+                                sizes: sizesData, // إضافة المقاسات
+                                created_at: product.created_at || null,
+                                updated_at: product.updated_at || null,
+                                description: product.description || 'منتج عالي الجودة من ابن المختار للأدوات المنزلية'
+                            };
+                        });
+                        
+                        console.log(`✅ تم جلب ${window.allProducts.length} منتج بنجاح`);
+                        console.log(`📊 المنتجات التي تحتوي مقاسات: ${window.allProducts.filter(p => p.sizes && p.sizes.length > 0).length}`);
+                        return true;
+                    }
                 }
-            }, 50);
+            } catch (err) {
+                console.error('🚨 خطأ في جلب جميع المنتجات:', err);
+            }
+            
+            return false;
         }
 
-        window.closeQuickView = function(){
-            quickViewEl.style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
+        // دالة لتحميل المزيد من المنتجات
+        window.loadMoreProducts = function() {
+            if (hasMoreProducts && !isLoadingProducts) {
+                console.log(`🔄 تحميل المزيد من المنتجات - الصفحة: ${currentPage}`);
+                fetchProducts(true); // loadMore = true
+            }
+        };
 
-        /* ====================== جلب المنتجات من Supabase ====================== */
         async function fetchProducts(loadMore = false) {
             if (isLoadingProducts) {
                 console.log('⏳ يتم تحميل المنتجات بالفعل، انتظر...');
@@ -2207,16 +2614,36 @@
                     
                     // تحقق من البيانات
                     if (products && Array.isArray(products) && products.length > 0) {
-                        const newProducts = products.map(product => ({
-                            id: product.id.toString(),
-                            name: product.name || product.title || 'منتج',
-                            price: parseFloat(product.price) || 0,
-                            category: product.category || 'عام',
-                            image: Array.isArray(product.image) ? product.image : 
-                                   (product.image ? [product.image] : []),
-                            created_at: product.created_at || null,
-                            updated_at: product.updated_at || null
-                        }));
+                        const newProducts = products.map(product => {
+                            // معالجة المقاسات - قد تكون JSON string أو array
+                            let sizesData = null;
+                            if (product.sizes) {
+                                try {
+                                    // إذا كان المقاسات مخزنة كـ JSON string
+                                    if (typeof product.sizes === 'string') {
+                                        sizesData = JSON.parse(product.sizes);
+                                    } else {
+                                        sizesData = product.sizes;
+                                    }
+                                } catch (e) {
+                                    console.warn('⚠️ خطأ في تحليل بيانات المقاسات:', e);
+                                    sizesData = null;
+                                }
+                            }
+                            
+                            return {
+                                id: product.id.toString(),
+                                name: product.name || product.title || 'منتج',
+                                price: parseFloat(product.price) || 0,
+                                category: product.category || 'عام',
+                                image: Array.isArray(product.image) ? product.image : 
+                                       (product.image ? [product.image] : []),
+                                sizes: sizesData, // إضافة المقاسات
+                                created_at: product.created_at || null,
+                                updated_at: product.updated_at || null,
+                                description: product.description || 'منتج عالي الجودة من ابن المختار للأدوات المنزلية'
+                            };
+                        });
                         
                         // إضافة المنتجات الجديدة إلى القائمة
                         if (loadMore) {
@@ -2226,6 +2653,7 @@
                         }
                         
                         console.log(`🔄 تم تحويل البيانات: ${window.allProducts.length} منتج إجمالاً`);
+                        console.log(`📊 المنتجات التي تحتوي مقاسات: ${window.allProducts.filter(p => p.sizes && p.sizes.length > 0).length}`);
                         
                         // التحقق إذا كان هناك المزيد من المنتجات للتحميل
                         hasMoreProducts = newProducts.length === productsPerPage;
@@ -2275,54 +2703,6 @@
             }
         }
 
-        // دالة لتحميل المزيد من المنتجات
-        window.loadMoreProducts = function() {
-            if (hasMoreProducts && !isLoadingProducts) {
-                console.log(`🔄 تحميل المزيد من المنتجات - الصفحة: ${currentPage}`);
-                fetchProducts(true); // loadMore = true
-            }
-        };
-
-        // دالة لجلب كل المنتجات مرة واحدة
-        async function fetchAllProducts() {
-            console.log('🔄 محاولة جلب جميع المنتجات مرة واحدة...');
-            
-            try {
-                if (sb) {
-                    // محاولة جلب جميع المنتجات بدون حدود
-                    const { data: products, error } = await sb
-                        .from('products')
-                        .select('*')
-                        .order('created_at', { ascending: false });
-                    
-                    if (error) {
-                        console.error('❌ خطأ في جلب جميع المنتجات:', error);
-                        return false;
-                    }
-                    
-                    if (products && Array.isArray(products) && products.length > 0) {
-                        window.allProducts = products.map(product => ({
-                            id: product.id.toString(),
-                            name: product.name || product.title || 'منتج',
-                            price: parseFloat(product.price) || 0,
-                            category: product.category || 'عام',
-                            image: Array.isArray(product.image) ? product.image : 
-                                   (product.image ? [product.image] : []),
-                            created_at: product.created_at || null,
-                            updated_at: product.updated_at || null
-                        }));
-                        
-                        console.log(`✅ تم جلب ${window.allProducts.length} منتج بنجاح`);
-                        return true;
-                    }
-                }
-            } catch (err) {
-                console.error('🚨 خطأ في جلب جميع المنتجات:', err);
-            }
-            
-            return false;
-        }
-
         function showSkeletons() {
             const grid = document.getElementById("productsGrid");
             if (!grid) return;
@@ -2353,8 +2733,10 @@
                     price: 45000,
                     category: "إلكترونيات",
                     image: ["https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400&h=400&fit=crop"],
-                    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), // 10 أيام مضت
-                    updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString() // يومين مضت
+                    sizes: null, // لا يحتوي مقاسات
+                    description: "ساعة يد ذكية مع ميزات متقدمة",
+                    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
+                    updated_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
                 },
                 {
                     id: "sample_2",
@@ -2362,7 +2744,13 @@
                     price: 25000,
                     category: "أكسسوارات",
                     image: ["https://images.unsplash.com/photo-1553062407-98eeb64c6a62?w=400&h=400&fit=crop"],
-                    created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(), // 15 يوم مضت
+                    sizes: [
+                        { name: "صغير", price: 20000, hasCustomPrice: true },
+                        { name: "وسط", price: 25000, hasCustomPrice: true },
+                        { name: "كبير", price: 30000, hasCustomPrice: true }
+                    ],
+                    description: "حقيبة ظهر رياضية متعددة الاستخدامات",
+                    created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
                     updated_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
                 },
                 {
@@ -2371,7 +2759,9 @@
                     price: 85000,
                     category: "أجهزة منزلية",
                     image: ["https://images.unsplash.com/photo-1570212851230-2554ff99f7fb?w=400&h=400&fit=crop"],
-                    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 أيام مضت
+                    sizes: null,
+                    description: "غلاية كهربائية سريعة التسخين",
+                    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
                     updated_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString()
                 },
                 {
@@ -2380,7 +2770,9 @@
                     price: 65000,
                     category: "إلكترونيات",
                     image: ["https://images.unsplash.com/photo-1585298723688-9c6a8a4d67ce?w=400&h=400&fit=crop"],
-                    created_at: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(), // 40 يوم مضت
+                    sizes: null,
+                    description: "سماعات بلوتوث لاسلكية عالية الجودة",
+                    created_at: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString(),
                     updated_at: new Date(Date.now() - 40 * 24 * 60 * 60 * 1000).toISOString()
                 },
                 {
@@ -2389,8 +2781,14 @@
                     price: 120000,
                     category: "أجهزة منزلية",
                     image: ["https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop"],
-                    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // يومين مضت
-                    updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString() // يوم مضى
+                    sizes: [
+                        { name: "30 لتر", price: 100000, hasCustomPrice: true },
+                        { name: "40 لتر", price: 120000, hasCustomPrice: true },
+                        { name: "50 لتر", price: 140000, hasCustomPrice: true }
+                    ],
+                    description: "فرن كهربائي متعدد الوظائف بسعة كبيرة",
+                    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
+                    updated_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
                 },
                 {
                     id: "sample_6",
@@ -2398,12 +2796,19 @@
                     price: 35000,
                     category: "منزلية",
                     image: ["https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=400&h=400&fit=crop"],
-                    created_at: new Date(Date.now() - 70 * 24 * 60 * 60 * 1000).toISOString(), // 70 يوم مضت
+                    sizes: [
+                        { name: "70x110 سم", price: 25000, hasCustomPrice: true },
+                        { name: "90x130 سم", price: 35000, hasCustomPrice: true },
+                        { name: "110x170 سم", price: 45000, hasCustomPrice: true }
+                    ],
+                    description: "سجادة صلاة فاخرة مصنوعة من أجود المواد",
+                    created_at: new Date(Date.now() - 70 * 24 * 60 * 60 * 1000).toISOString(),
                     updated_at: new Date(Date.now() - 70 * 24 * 60 * 60 * 1000).toISOString()
                 }
             ];
             
             console.log('📦 استخدام بيانات تجريبية:', sampleProducts.length, 'منتج');
+            console.log('📊 المنتجات التجريبية التي تحتوي مقاسات:', sampleProducts.filter(p => p.sizes && p.sizes.length > 0).length);
             return sampleProducts;
         }
 
@@ -2498,6 +2903,16 @@
                     renderProducts();
                     fetchCategories();
                 }
+                
+                // 👇 إضافة هذا السطر للتحقق من البيانات
+                console.log('🔍 التحقق من بيانات المنتجات:', {
+                    total: window.allProducts.length,
+                    firstProduct: window.allProducts[0],
+                    productsWithSizes: window.allProducts.filter(p => p.sizes && p.sizes.length > 0).map(p => ({
+                        name: p.name,
+                        sizes: p.sizes
+                    }))
+                });
             } else {
                 console.warn('⚠️ لا يمكن الاتصال بـ Supabase، سيتم استخدام بيانات محلية');
                 showErrorMessage('تعذر الاتصال بالسيرفر. جاري استخدام بيانات محلية.');
@@ -2550,4 +2965,4 @@
 
     </script>
 </body>
-    </html>
+</html>
