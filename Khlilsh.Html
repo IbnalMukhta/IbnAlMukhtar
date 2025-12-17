@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>تعديل التسعيرات - البحث والعرض</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <style>
+    :root { 
+      --primary: #c6a047; 
+      --primary-dark: #b18c34; 
+      --bg-color: #f8f9fa; 
+      --card-bg: #ffffff; 
+      --text-color: #333; 
+      --error-color: #dc3545; 
+      --success-color: #28a745;
+      --info-color: #17a2b8;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'Tajawal', sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 130px 0 40px; }
+    
+    header { 
+      position: fixed; top: 0; left: 0; right: 0; background: #fff; 
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 1000; padding: 10px 20px;
+    }
+    .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    header h1 { margin: 0; font-size: 18px; color: var(--primary); font-weight: 800; }
+    
+    /* شريط البحث */
+    .search-container { position: relative; width: 100%; max-width: 600px; margin: 0 auto; }
+    .search-input {
+      width: 100%; padding: 10px 40px 10px 15px; border-radius: 12px; border: 1px solid #eee;
+      background: #f9f9f9; font-family: 'Tajawal'; font-size: 14px; outline: none; transition: 0.3s;
+    }
+    .search-input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(198, 160, 71, 0.1); }
+    .search-icon { position: absolute; right: 15px; top: 50%; transform: translateY(-50%); color: #999; }
+
+    .nav-link { 
+      text-decoration: none; font-size: 13px; font-weight: bold; color: #333; 
+      background: #eee; padding: 6px 12px; border-radius: 20px; transition: 0.3s; 
+      display: inline-flex; align-items: center; gap: 5px;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+
+    .product-card {
+      background: var(--card-bg); border-radius: 12px; overflow: hidden;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f0f0;
+      display: flex; flex-direction: column;
+    }
+    .product-img { width: 100%; height: 200px; object-fit: cover; background: #eee; }
+    .product-body { padding: 15px; flex: 1; }
+    .product-title { font-weight: 700; font-size: 16px; margin-bottom: 8px; }
+    .product-price { font-weight: 800; color: var(--primary); font-size: 18px; }
+    .size-badge { font-size: 11px; background: #e7f3ff; color: #0056b3; padding: 2px 8px; border-radius: 4px; }
+
+    .actions { padding: 10px; border-top: 1px solid #eee; display: flex; gap: 10px; background: #fafafa; }
+    .btn { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-family: 'Tajawal'; font-weight: 600; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+    .btn-edit { background: var(--info-color); color: white; }
+    .btn-delete { background: var(--error-color); color: white; }
+
+    /* Modal */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; display: none; justify-content: center; align-items: center; padding: 20px; backdrop-filter: blur(4px); }
+    .modal-content { background: white; width: 100%; max-width: 500px; border-radius: 16px; padding: 25px; max-height: 90vh; overflow-y: auto; }
+    .edit-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; font-family: 'Tajawal'; margin-bottom: 15px; }
+    .size-row-edit { display: flex; gap: 8px; margin-bottom: 10px; }
+    .btn-save-changes { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: 800; cursor: pointer; }
+
+    .notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 15px 30px; border-radius: 12px; color: white; z-index: 3000; display: none; }
+    .notification.success { background-color: var(--success-color); }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>إدارة المتجر</h1>
+    <div style="display: flex; gap: 8px;">
+      <a href="index.html" class="nav-link"><i class="fas fa-plus"></i> إضافة</a>
+      <button onclick="fetchProducts()" class="nav-link" style="border:none; cursor:pointer;"><i class="fas fa-sync-alt"></i></button>
+    </div>
+  </div>
+  <div class="search-container">
+    <i class="fas fa-search search-icon"></i>
+    <input type="text" id="searchInput" class="search-input" placeholder="ابحث عن منتج باسمه أو تصنيفه..." oninput="filterProducts()">
+  </div>
+</header>
+
+<div id="notification" class="notification"></div>
+
+<div class="container">
+  <div class="products-grid" id="productsGrid">
+    <div style="grid-column: 1/-1; text-align: center; padding: 50px; color: #888;">جاري تحميل المنتجات...</div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="editModal">
+  <div class="modal-content">
+    <h3 style="margin-top:0; color:var(--primary)">تعديل المنتج</h3>
+    <input type="hidden" id="editProductId">
+    <label style="font-size:13px; font-weight:bold">اسم المنتج</label>
+    <input type="text" id="editName" class="edit-input">
+    
+    <div id="basePriceGroup">
+      <label style="font-size:13px; font-weight:bold">السعر الأساسي</label>
+      <input type="number" id="editPrice" class="edit-input">
+    </div>
+
+    <label style="font-size:13px; font-weight:bold">المقاسات</label>
+    <div id="editSizesContainer"></div>
+    <button onclick="addSizeRowInModal()" style="width:100%; padding:8px; margin-bottom:15px; cursor:pointer">+ إضافة مقاس</button>
+    
+    <button class="btn-save-changes" id="saveBtn" onclick="saveProductChanges()">حفظ التغييرات</button>
+    <button onclick="closeEditModal()" style="width:100%; background:none; border:none; margin-top:10px; cursor:pointer; color:#777">إلغاء</button>
+  </div>
+</div>
+
+<script>
+  const SUPABASE_URL = 'https://ukjgzbgzzmlprnhlwgpr.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVramd6Ymd6em1scHJuaGx3Z3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NTM4NzAsImV4cCI6MjA4MTIyOTg3MH0.A-xvwqyDxwxDTeiB8nBgOwrJTPLWenYlO99nxbgobTw';
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  
+  let allProducts = []; // لتخزين النسخة الكاملة من المنتجات
+
+  async function fetchProducts() {
+    try {
+      const { data, error } = await sb.from('products').select('*').order('created_at', { ascending: false });
+      if (error) throw error;
+      allProducts = data;
+      renderProducts(allProducts);
+    } catch (err) { alert(err.message); }
+  }
+
+  // دالة عرض المنتجات (Render) لكي نستخدمها في البحث أيضاً
+  function renderProducts(productsList) {
+    const grid = document.getElementById('productsGrid');
+    grid.innerHTML = '';
+    
+    if (productsList.length === 0) {
+      grid.innerHTML = '<div style="grid-column:1/-1; text-align:center; padding:50px; color:#888;">لم يتم العثور على نتائج.</div>';
+      return;
+    }
+
+    productsList.forEach(product => {
+      const imgSrc = product.image?.[0] || 'https://via.placeholder.com/300';
+      const hasSizes = product.sizes && product.sizes.length > 0;
+      const priceText = hasSizes ? `من ${Math.min(...product.sizes.map(s => s.price))} ريال` : `${product.price} ريال`;
+
+      const card = document.createElement('div');
+      card.className = 'product-card';
+      card.innerHTML = `
+        <img src="${imgSrc}" class="product-img">
+        <div class="product-body">
+          <div style="font-size:11px; color:#999">${product.category || 'عام'}</div>
+          <div class="product-title">${product.name}</div>
+          <div class="product-price">${priceText} ${hasSizes ? `<span class="size-badge">${product.sizes.length} مقاسات</span>` : ''}</div>
+        </div>
+        <div class="actions">
+          <button class="btn btn-edit" onclick="openEditModal(${product.id})">تعديل</button>
+          <button class="btn btn-delete" onclick="deleteProduct(${product.id})">حذف</button>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  // دالة الفلترة (البحث)
+  function filterProducts() {
+    const query = document.getElementById('searchInput').value.toLowerCase().trim();
+    const filtered = allProducts.filter(p => 
+      p.name.toLowerCase().includes(query) || 
+      (p.category && p.category.toLowerCase().includes(query))
+    );
+    renderProducts(filtered);
+  }
+
+  // بقية الدوال (التعديل، الحفظ، الحذف) تبقى كما هي...
+  function openEditModal(id) {
+    const p = allProducts.find(x => x.id === id);
+    document.getElementById('editProductId').value = p.id;
+    document.getElementById('editName').value = p.name;
+    document.getElementById('editPrice').value = p.price || 0;
+    const container = document.getElementById('editSizesContainer');
+    container.innerHTML = '';
+    if (p.sizes && p.sizes.length > 0) {
+      document.getElementById('basePriceGroup').style.display = 'none';
+      p.sizes.forEach(s => addSizeRowInModal(s.name, s.price));
+    } else {
+      document.getElementById('basePriceGroup').style.display = 'block';
+    }
+    document.getElementById('editModal').style.display = 'flex';
+  }
+
+  function addSizeRowInModal(n='', p='') {
+    const div = document.createElement('div');
+    div.className = 'size-row-edit';
+    div.innerHTML = `<input type="text" placeholder="المقاس" class="modal-s-n" value="${n}"><input type="number" placeholder="السعر" class="modal-s-p" value="${p}"><button onclick="this.parentElement.remove(); checkSizesStatus()">X</button>`;
+    document.getElementById('editSizesContainer').appendChild(div);
+    checkSizesStatus();
+  }
+
+  function checkSizesStatus() {
+    const hasRows = document.getElementById('editSizesContainer').children.length > 0;
+    document.getElementById('basePriceGroup').style.display = hasRows ? 'none' : 'block';
+  }
+
+  async function saveProductChanges() {
+    const id = document.getElementById('editProductId').value;
+    const rows = document.querySelectorAll('.size-row-edit');
+    let sizes = [];
+    rows.forEach(r => {
+      const n = r.querySelector('.modal-s-n').value;
+      const p = r.querySelector('.modal-s-p').value;
+      if(n && p) sizes.push({name:n, price:Number(p), hasCustomPrice:true});
+    });
+
+    const updateData = {
+      name: document.getElementById('editName').value,
+      price: sizes.length > 0 ? 0 : Number(document.getElementById('editPrice').value),
+      sizes: sizes.length > 0 ? sizes : null
+    };
+
+    const { error } = await sb.from('products').update(updateData).eq('id', Number(id));
+    if(!error) { closeEditModal(); fetchProducts(); } else { alert(error.message); }
+  }
+
+  async function deleteProduct(id) {
+    if(confirm('هل أنت متأكد؟')) {
+      const { error } = await sb.from('products').delete().eq('id', id);
+      if(!error) fetchProducts();
+    }
+  }
+
+  function closeEditModal() { document.getElementById('editModal').style.display = 'none'; }
+  document.addEventListener('DOMContentLoaded', fetchProducts);
+</script>
+</body>
+</html>
