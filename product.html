@@ -5,15 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
     <title id="pageTitle">ابن المختار - عرض المنتج</title>
     
-    <meta property="og:type" content="website">
-    <meta property="og:title" id="ogTitle" content="ابن المختار للأدوات المنزلية">
-    <meta property="og:description" id="ogDesc" content="تصفح أفضل الأدوات المنزلية">
-    <meta property="og:image" id="ogImage" content="">
-    <meta property="og:url" id="ogUrl" content="">
-
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
     <style>
@@ -29,80 +22,102 @@
 
         .container { max-width: 800px; margin: 0 auto; padding: 15px; }
 
-        /* تأثير توهج زر عرض كل المنتجات */
-        @keyframes glowing-pulse {
-            0% { box-shadow: 0 0 5px rgba(255, 140, 0, 0.4); transform: scale(1); }
-            50% { box-shadow: 0 0 25px rgba(255, 140, 0, 0.7); transform: scale(1.03); }
-            100% { box-shadow: 0 0 5px rgba(255, 140, 0, 0.4); transform: scale(1); }
+        /* --- تصميم المعرض (Gallery) --- */
+        .gallery-wrapper {
+            background: #fff;
+            border-radius: var(--radius);
+            padding: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            margin-bottom: 20px;
         }
-
-        .center-nav-wrapper { display: flex; justify-content: center; margin: 25px 0; }
-        .back-to-shop-glow {
-            text-decoration: none; background: linear-gradient(135deg, var(--main-color), #003366);
-            color: #fff; font-weight: 800; display: flex; align-items: center; gap: 12px;
-            padding: 18px 45px; border-radius: 50px; font-size: 18px; border: 2px solid var(--secondary-color);
-            animation: glowing-pulse 2s infinite ease-in-out;
-        }
-
-        /* معرض الصور */
-        .carousel-wrapper {
-            position: relative; width: 100%; background: #fff; border-radius: var(--radius);
-            overflow: hidden; box-shadow: 0 4px 25px rgba(0,0,0,0.08); margin-bottom: 10px;
-        }
-        .carousel-container { display: flex; transition: transform 0.4s ease; width: 100%; }
-        .carousel-item { min-width: 100%; aspect-ratio: 1/1; display: flex; align-items: center; justify-content: center; }
-        .carousel-item img { width: 100%; height: 100%; object-fit: contain; }
         
-        .nav-btn {
-            position: absolute; top: 50%; transform: translateY(-50%);
-            background: rgba(255,255,255,0.9); border: none; width: 45px; height: 45px;
-            border-radius: 50%; cursor: pointer; z-index: 10; display: flex; align-items: center; justify-content: center;
+        .main-image-container {
+            width: 100%;
+            aspect-ratio: 1/1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border-radius: 15px;
+            background: #fdfdfd;
+            position: relative;
         }
-        .prev-btn { right: 10px; } .next-btn { left: 10px; }
 
-        /* المقاسات */
+        .main-image-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transition: 0.3s ease-in-out;
+        }
+
+        .thumbnails-grid {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            scrollbar-width: none;
+        }
+        .thumbnails-grid::-webkit-scrollbar { display: none; }
+
+        .thumb-item {
+            width: 70px;
+            height: 70px;
+            flex-shrink: 0;
+            border-radius: 10px;
+            cursor: pointer;
+            border: 2px solid transparent;
+            overflow: hidden;
+            background: #eee;
+            transition: 0.2s;
+        }
+
+        .thumb-item img { width: 100%; height: 100%; object-fit: cover; }
+        .thumb-item.active { border-color: var(--secondary-color); transform: scale(1.05); }
+
+        /* --- المعلومات والأزرار --- */
         .info-card { background: #fff; padding: 25px; border-radius: var(--radius); margin-bottom: 15px; box-shadow: 0 3px 15px rgba(0,0,0,0.03); }
         .product-title { font-size: 24px; font-weight: 800; margin-bottom: 12px; }
         .price-now { font-size: 32px; font-weight: 800; color: var(--secondary-color); }
 
-        .size-options { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 15px; }
-        .size-btn { flex: 1; min-width: 110px; padding: 15px; border: 2px solid #f0f0f0; border-radius: 15px; text-align: center; cursor: pointer; }
+        .size-btn { flex: 1; min-width: 110px; padding: 15px; border: 2px solid #f0f0f0; border-radius: 15px; text-align: center; cursor: pointer; margin: 5px; }
         .size-btn.active { border-color: var(--secondary-color); background: #fff9f2; color: var(--secondary-color); font-weight: 700; }
 
-        /* الأزرار السفلية */
         .footer-actions {
             position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
             padding: 15px 20px; display: flex; gap: 10px; box-shadow: 0 -10px 30px rgba(0,0,0,0.08); z-index: 1000;
         }
         .add-btn { flex: 2.5; background: var(--main-color); color: #fff; border: none; border-radius: 15px; font-weight: 800; height: 60px; font-size: 18px; cursor: pointer; }
-        .share-btn { flex: 0.7; background: #f0f2f5; color: var(--main-color); border: none; border-radius: 15px; font-size: 22px; cursor: pointer; }
-        .wa-btn { flex: 0.7; background: #25D366; color: #fff; border: none; border-radius: 15px; font-size: 26px; cursor: pointer; }
+        .wa-btn { flex: 1; background: #25D366; color: #fff; border: none; border-radius: 15px; font-size: 26px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: 'Tajawal'; font-weight: 700; }
 
-        /* توست السلة */
-        .cart-toast {
-            position: fixed; bottom: 110px; left: 50%; transform: translateX(-50%) translateY(120px);
-            background: rgba(0, 31, 63, 0.98); color: white; padding: 15px 30px;
-            border-radius: 50px; z-index: 2000; transition: 0.4s ease; opacity: 0;
+        /* زر الرجوع المتوهج */
+        @keyframes glowing {
+            0% { box-shadow: 0 0 5px rgba(255, 140, 0, 0.4); }
+            50% { box-shadow: 0 0 20px rgba(255, 140, 0, 0.6); }
+            100% { box-shadow: 0 0 5px rgba(255, 140, 0, 0.4); }
         }
-        .cart-toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .back-btn-glow {
+            text-decoration: none; background: var(--main-color); color: #fff;
+            padding: 12px 25px; border-radius: 50px; display: inline-flex; align-items: center; gap: 10px;
+            margin-bottom: 15px; font-weight: 700; border: 1px solid var(--secondary-color);
+            animation: glowing 2s infinite;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div id="productContent">
-        <div class="carousel-wrapper">
-            <div class="carousel-container" id="carousel"></div>
-            <button class="nav-btn prev-btn" onclick="moveSlide(1)">❯</button>
-            <button class="nav-btn next-btn" onclick="moveSlide(-1)">❮</button>
-        </div>
+    <a href="index.html" class="back-btn-glow">
+        <i class="fas fa-arrow-right"></i> عرض كل المنتجات
+    </a>
 
-        <div class="center-nav-wrapper">
-            <a href="index.html" class="back-to-shop-glow">
-                <i class="fas fa-th-large"></i>
-                <span>عرض كل المنتجات</span>
-                <i class="fas fa-chevron-left" style="font-size: 14px;"></i>
-            </a>
+    <div id="productContent">
+        <div class="gallery-wrapper">
+            <div class="main-image-container">
+                <img id="mainImg" src="" alt="المنتج">
+            </div>
+            <div class="thumbnails-grid" id="thumbGrid">
+                </div>
         </div>
 
         <div class="info-card">
@@ -110,9 +125,10 @@
             <div>
                 <span class="price-now" id="priceDisplay">0</span> <small>ر.ي</small>
             </div>
+            
             <div id="sizesSection" style="display:none; margin-top:25px;">
                 <span style="font-weight:800; display:block; margin-bottom:12px;">اختر المقاس:</span>
-                <div class="size-options" id="sizesList"></div>
+                <div style="display:flex; flex-wrap:wrap;" id="sizesList"></div>
             </div>
         </div>
 
@@ -124,83 +140,71 @@
 </div>
 
 <div class="footer-actions">
-    <button class="add-btn" id="addToCartBtn" onclick="addToCart()">🛒 أضف للسلة</button>
-    <button class="share-btn" onclick="shareProduct()"><i class="fas fa-share-nodes"></i></button>
-    <button class="wa-btn" onclick="sendWhatsApp()"><i class="fab fa-whatsapp"></i></button>
+    <button class="add-btn" onclick="addToCart()">🛒 أضف للسلة</button>
+    <button class="wa-btn" onclick="sendWhatsApp()">
+        <i class="fab fa-whatsapp"></i>
+        <span style="font-size: 16px;">اطلب الآن</span>
+    </button>
 </div>
 
 <script>
-    // إعدادات Supabase (نفس التي في كودك الرئيسي)
     const SUPABASE_URL = 'https://ukjgzbgzzmlprnhlwgpr.supabase.co';
     const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVramd6Ymd6em1scHJuaGx3Z3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NTM4NzAsImV4cCI6MjA4MTIyOTg3MH0.A-xvwqyDxwxDTeiB8nBgOwrJTPLWenYlO99nxbgobTw';
-    
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const urlParams = new URLSearchParams(window.location.search);
     const productId = urlParams.get('id');
     let productData = null;
     let selectedSize = null;
-    let currentIndex = 0;
 
     async function init() {
-        if (!productId) {
-            window.location.href = 'index.html';
-            return;
-        }
+        if (!productId) { window.location.href = 'index.html'; return; }
 
-        // جلب المنتج مباشرة من Supabase لضمان ظهوره عند المشاركة
-        const { data, error } = await _supabase
-            .from('products')
-            .select('*')
-            .eq('id', productId)
-            .single();
-
-        if (error || !data) {
-            document.body.innerHTML = "<div style='text-align:center; margin-top:100px;'><h2>المنتج غير موجود</h2><a href='index.html'>العودة للمتجر</a></div>";
-            return;
-        }
+        const { data, error } = await _supabase.from('products').select('*').eq('id', productId).single();
+        if (error || !data) { document.body.innerHTML = "<h2>المنتج غير موجود</h2>"; return; }
 
         productData = data;
-        render();
-        updateMetaTags();
+        renderProduct();
     }
 
-    function updateMetaTags() {
-        const img = Array.isArray(productData.image) ? productData.image[0] : productData.image;
-        document.title = productData.name + " - ابن المختار";
-        document.getElementById('ogTitle').setAttribute('content', productData.name);
-        document.getElementById('ogImage').setAttribute('content', img);
-        document.getElementById('ogUrl').setAttribute('content', window.location.href);
-    }
-
-    function render() {
+    function renderProduct() {
         document.getElementById('title').innerText = productData.name;
-        document.getElementById('description').innerText = productData.description || "أفضل الأدوات المنزلية من ابن المختار.";
-
-        // السعر
+        document.getElementById('description').innerText = productData.description || "منتج مميز من ابن المختار.";
         document.getElementById('priceDisplay').innerText = Number(productData.price).toLocaleString();
 
-        // الصور
+        // إعداد معرض الصور
         const imgs = Array.isArray(productData.image) ? productData.image : [productData.image];
-        const carousel = document.getElementById('carousel');
-        carousel.innerHTML = imgs.map(img => `<div class="carousel-item"><img src="${img}"></div>`).join('');
+        const mainImg = document.getElementById('mainImg');
+        const thumbGrid = document.getElementById('thumbGrid');
+
+        mainImg.src = imgs[0]; // الصورة الأولى كصورة رئيسية
+
+        thumbGrid.innerHTML = imgs.map((img, i) => `
+            <div class="thumb-item ${i === 0 ? 'active' : ''}" onclick="changeMainImg(this, '${img}')">
+                <img src="${img}">
+            </div>
+        `).join('');
 
         // المقاسات
         let sizes = [];
-        try {
-            sizes = typeof productData.sizes === 'string' ? JSON.parse(productData.sizes) : productData.sizes;
-        } catch(e) { sizes = []; }
+        try { sizes = typeof productData.sizes === 'string' ? JSON.parse(productData.sizes) : productData.sizes; } catch(e) {}
 
         if (sizes && sizes.length > 0) {
             document.getElementById('sizesSection').style.display = 'block';
-            const list = document.getElementById('sizesList');
-            list.innerHTML = sizes.map((s, i) => `
+            document.getElementById('sizesList').innerHTML = sizes.map((s, i) => `
                 <div class="size-btn" id="s-${i}" onclick="selectSize(${i}, ${JSON.stringify(s).replace(/"/g, '&quot;')})">
                     <strong>${s.name}</strong><br><small>${Number(s.price).toLocaleString()} ر.ي</small>
                 </div>
             `).join('');
             selectSize(0, sizes[0]);
         }
+    }
+
+    // وظيفة تبديل الصور في المعرض
+    function changeMainImg(el, src) {
+        document.getElementById('mainImg').src = src;
+        document.querySelectorAll('.thumb-item').forEach(t => t.classList.remove('active'));
+        el.classList.add('active');
     }
 
     function selectSize(idx, sizeObj) {
@@ -210,60 +214,30 @@
         document.getElementById('priceDisplay').innerText = Number(sizeObj.price).toLocaleString();
     }
 
-    function moveSlide(step) {
-        const total = document.querySelectorAll('.carousel-item').length;
-        currentIndex = (currentIndex + step + total) % total;
-        document.getElementById('carousel').style.transform = `translateX(${currentIndex * 100}%)`;
+    // --- وظيفة واتساب المطلوبة (اسم المنتج وسعر فقط بدون رابط) ---
+    function sendWhatsApp() {
+        const currentPrice = document.getElementById('priceDisplay').innerText;
+        const productName = productData.name;
+        const sizeInfo = selectedSize ? ` (المقاس: ${selectedSize.name})` : '';
+
+        // الرسالة المطلوبة
+        const msg = `أرغب في طلب: *${productName}*${sizeInfo}\nالسعر: *${currentPrice} ر.ي*`;
+        
+        window.open(`https://wa.me/967773266534?text=${encodeURIComponent(msg)}`);
     }
 
     function addToCart() {
         let cart = JSON.parse(localStorage.getItem("cart") || "[]");
-        const price = selectedSize ? selectedSize.price : productData.price;
-        const sizeName = selectedSize ? selectedSize.name : null;
-
         cart.push({
             id: productData.id,
             name: productData.name,
-            price: price,
+            price: selectedSize ? selectedSize.price : productData.price,
             qty: 1,
-            sizeName: sizeName,
+            sizeName: selectedSize ? selectedSize.name : null,
             image: Array.isArray(productData.image) ? productData.image[0] : productData.image
         });
-
         localStorage.setItem("cart", JSON.stringify(cart));
-        showToast();
-    }
-
-    function showToast() {
-        const toast = document.createElement('div');
-        toast.className = 'cart-toast';
-        toast.innerHTML = `✓ تمت الإضافة للسلة`;
-        document.body.appendChild(toast);
-        setTimeout(() => toast.classList.add('show'), 50);
-        setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 500); }, 2500);
-    }
-
-    function shareProduct() {
-        if (navigator.share) {
-            navigator.share({
-                title: productData.name,
-                url: window.location.href
-            });
-        } else {
-            const el = document.createElement('textarea');
-            el.value = window.location.href;
-            document.body.appendChild(el);
-            el.select();
-            document.execCommand('copy');
-            document.body.removeChild(el);
-            alert('تم نسخ رابط المنتج لمشاركته!');
-        }
-    }
-
-    function sendWhatsApp() {
-        const p = document.getElementById('priceDisplay').innerText;
-        const msg = `أرغب في طلب: *${productData.name}*\nالسعر: ${p} ر.ي\nالرابط: ${window.location.href}`;
-        window.open(`https://wa.me/967773266534?text=${encodeURIComponent(msg)}`);
+        alert("تمت الإضافة للسلة");
     }
 
     init();
