@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>إدارة التصنيفات - ابن المختار للأدوات المنزلية</title>
+    <title>إدارة تصنيفات المنتجات - ابن المختار للأدوات المنزلية</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -76,9 +76,55 @@
 
         /* Main Container */
         .main-container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 30px auto;
             padding: 0 20px;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+            background: white;
+            border-radius: var(--radius);
+            padding: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: #666;
+            font-weight: 700;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-btn.active {
+            background: var(--secondary-color);
+            color: white;
+        }
+
+        .tab-btn:hover:not(.active) {
+            background: #f0f0f0;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         /* Dashboard Cards */
@@ -234,6 +280,24 @@
             background: #218838;
         }
 
+        .btn-info {
+            background: var(--info);
+            color: white;
+        }
+
+        .btn-info:hover {
+            background: #138496;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: #212529;
+        }
+
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+
         .btn-block {
             width: 100%;
         }
@@ -351,17 +415,6 @@
             gap: 8px;
         }
 
-        /* Sortable Styles */
-        .sortable-ghost {
-            opacity: 0.4;
-            background: #f0f0f0;
-        }
-
-        .sortable-chosen {
-            background: #f0f7ff;
-            box-shadow: 0 2px 8px rgba(0, 31, 63, 0.1);
-        }
-
         /* Preview Section */
         .preview-section {
             margin-top: 30px;
@@ -431,6 +484,18 @@
             background: rgba(255, 77, 77, 0.1);
             border: 1px solid rgba(255, 77, 77, 0.2);
             color: #721c24;
+        }
+
+        .alert-info {
+            background: rgba(23, 162, 184, 0.1);
+            border: 1px solid rgba(23, 162, 184, 0.2);
+            color: #0c5460;
+        }
+
+        .alert-warning {
+            background: rgba(255, 193, 7, 0.1);
+            border: 1px solid rgba(255, 193, 7, 0.2);
+            color: #856404;
         }
 
         /* Toggle Switch */
@@ -515,6 +580,45 @@
             color: white;
         }
 
+        /* Products Grid */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.3s ease;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .product-card h4 {
+            margin: 0 0 10px 0;
+            color: var(--main-color);
+        }
+
+        .product-meta {
+            display: flex;
+            gap: 10px;
+            margin: 10px 0;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .product-meta span {
+            background: #f0f0f0;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
         /* Footer */
         .admin-footer {
             text-align: center;
@@ -542,6 +646,156 @@
             .admin-header h1 {
                 font-size: 18px;
             }
+            
+            .products-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Loading */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--secondary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--main-color);
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .badge-success {
+            background: rgba(40, 167, 69, 0.1);
+            color: #155724;
+        }
+
+        .badge-danger {
+            background: rgba(255, 77, 77, 0.1);
+            color: #721c24;
+        }
+
+        .badge-warning {
+            background: rgba(255, 193, 7, 0.1);
+            color: #856404;
+        }
+
+        .badge-info {
+            background: rgba(23, 162, 184, 0.1);
+            color: #0c5460;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            height: 10px;
+            background: #f0f0f0;
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--secondary-color);
+            border-radius: 5px;
+            transition: width 0.3s ease;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-connected {
+            background: rgba(40, 167, 69, 0.1);
+            color: #155724;
+            border: 1px solid rgba(40, 167, 69, 0.2);
+        }
+
+        .status-disconnected {
+            background: rgba(255, 77, 77, 0.1);
+            color: #721c24;
+            border: 1px solid rgba(255, 77, 77, 0.2);
+        }
+
+        .status-connecting {
+            background: rgba(255, 193, 7, 0.1);
+            color: #856404;
+            border: 1px solid rgba(255, 193, 7, 0.2);
+        }
+
+        /* Real-time Indicator */
+        .realtime-indicator {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: white;
+            padding: 10px 15px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            z-index: 1000;
+        }
+
+        .realtime-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
     </style>
 </head>
@@ -550,7 +804,10 @@
     <header class="admin-header">
         <h1>
             <i class="fas fa-tags"></i>
-            إدارة التصنيفات - متجر ابن المختار
+            نظام إدارة تصنيفات المنتجات
+            <span id="realtimeBadge" class="badge badge-success" style="display: none;">
+                <i class="fas fa-broadcast-tower"></i> مباشر
+            </span>
         </h1>
         <button class="back-button" onclick="window.location.href='index.html'">
             <i class="fas fa-arrow-right"></i>
@@ -558,52 +815,93 @@
         </button>
     </header>
 
+    <!-- Real-time Indicator -->
+    <div class="realtime-indicator" id="realtimeIndicator" style="display: none;">
+        <div class="realtime-dot"></div>
+        <span>مزامنة مباشرة مع السحابة</span>
+    </div>
+
     <!-- Main Container -->
     <div class="main-container">
-        <!-- Dashboard Cards -->
-        <div class="dashboard-cards">
-            <div class="dashboard-card">
-                <i class="fas fa-tags"></i>
-                <h3>إجمالي التصنيفات</h3>
-                <div class="count" id="totalCategories">0</div>
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('dashboard')">
+                <i class="fas fa-chart-bar"></i> لوحة التحكم
+            </button>
+            <button class="tab-btn" onclick="switchTab('categories')">
+                <i class="fas fa-tags"></i> إدارة التصنيفات
+            </button>
+            <button class="tab-btn" onclick="switchTab('products')">
+                <i class="fas fa-box"></i> تصنيف المنتجات
+            </button>
+            <button class="tab-btn" onclick="switchTab('sync')">
+                <i class="fas fa-sync-alt"></i> المزامنة
+            </button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboardTab" class="tab-content active">
+            <!-- Dashboard Cards -->
+            <div class="dashboard-cards">
+                <div class="dashboard-card">
+                    <i class="fas fa-tags"></i>
+                    <h3>إجمالي التصنيفات</h3>
+                    <div class="count" id="totalCategories">0</div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <i class="fas fa-eye"></i>
+                    <h3>التصنيفات النشطة</h3>
+                    <div class="count" id="activeCategories">0</div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <i class="fas fa-box"></i>
+                    <h3>المنتجات المصنفة</h3>
+                    <div class="count" id="categorizedProducts">0</div>
+                </div>
+                
+                <div class="dashboard-card">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <h3>منتجات بدون تصنيف</h3>
+                    <div class="count" id="uncategorizedProducts">0</div>
+                </div>
             </div>
-            
-            <div class="dashboard-card">
-                <i class="fas fa-eye"></i>
-                <h3>التصنيفات النشطة</h3>
-                <div class="count" id="activeCategories">0</div>
+
+            <!-- Quick Stats -->
+            <div class="section-card">
+                <h2><i class="fas fa-chart-pie"></i> إحصائيات سريعة</h2>
+                <div id="statsContainer">
+                    <!-- Stats will be loaded here -->
+                </div>
             </div>
-            
-            <div class="dashboard-card">
-                <i class="fas fa-sort-amount-down"></i>
-                <h3>الترتيب الحالي</h3>
-                <div class="count" id="orderStatus">مفعل</div>
-            </div>
-            
-            <div class="dashboard-card">
-                <i class="fas fa-history"></i>
-                <h3>آخر تحديث</h3>
-                <div class="count" id="lastUpdate">الآن</div>
+
+            <!-- Recent Activities -->
+            <div class="section-card">
+                <h2><i class="fas fa-history"></i> الأنشطة الأخيرة</h2>
+                <div id="activitiesContainer">
+                    <!-- Activities will be loaded here -->
+                </div>
             </div>
         </div>
 
-        <!-- Management Sections -->
-        <div class="management-sections">
-            <!-- Add/Edit Category Section -->
-            <div class="section-card">
-                <h2><i class="fas fa-plus-circle"></i> إضافة/تعديل تصنيف</h2>
-                
-                <div id="alertContainer"></div>
-                
-                <form id="categoryForm">
-                    <input type="hidden" id="categoryId">
+        <!-- Categories Management Tab -->
+        <div id="categoriesTab" class="tab-content">
+            <div class="management-sections">
+                <!-- Add/Edit Category Section -->
+                <div class="section-card">
+                    <h2><i class="fas fa-plus-circle"></i> إضافة/تعديل تصنيف</h2>
                     
-                    <div class="form-group">
-                        <label for="categoryName">اسم التصنيف *</label>
-                        <input type="text" id="categoryName" class="form-control" placeholder="أدخل اسم التصنيف" required>
-                    </div>
+                    <div id="alertContainer"></div>
                     
-                    <div class="form-row">
+                    <form id="categoryForm">
+                        <input type="hidden" id="categoryId">
+                        
+                        <div class="form-group">
+                            <label for="categoryName">اسم التصنيف *</label>
+                            <input type="text" id="categoryName" class="form-control" placeholder="أدخل اسم التصنيف" required>
+                        </div>
+                        
                         <div class="form-group">
                             <label for="categoryIcon">اختر أيقونة</label>
                             <div class="icons-grid" id="iconsGrid">
@@ -611,86 +909,174 @@
                             </div>
                             <input type="hidden" id="categoryIcon" value="fas fa-tag">
                         </div>
+                        
+                        <div class="form-group">
+                            <label for="categoryColor">لون التصنيف</label>
+                            <input type="color" id="categoryColor" class="form-control" value="#FF8C00">
+                        </div>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="categoryOrder">ترتيب العرض</label>
+                                <input type="number" id="categoryOrder" class="form-control" min="1" value="1">
+                                <small style="color: #666;">رقم أقل يعني ظهوراً أعلى</small>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label style="display: flex; align-items: center; gap: 10px;">
+                                    <span>تفعيل التصنيف</span>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="categoryActive" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
+                                <i class="fas fa-save"></i> حفظ التصنيف
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Categories List Section -->
+                <div class="section-card">
+                    <h2><i class="fas fa-list"></i> قائمة التصنيفات</h2>
+                    
+                    <div class="active-categories">
+                        <h3><i class="fas fa-check-circle"></i> التصنيفات النشطة في الهيدر</h3>
+                        <div class="active-categories-list" id="activeCategoriesList">
+                            <!-- Active categories will be populated here -->
+                        </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="categoryColor">لون التصنيف</label>
-                        <input type="color" id="categoryColor" class="form-control" value="#FF8C00">
+                    <div style="margin-top: 20px;">
+                        <div class="categories-list" id="categoriesList">
+                            <!-- Categories will be populated here -->
+                        </div>
                     </div>
                     
-                    <div class="form-group">
-                        <label for="categoryOrder">ترتيب العرض</label>
-                        <input type="number" id="categoryOrder" class="form-control" min="1" value="1">
-                        <small style="color: #666;">رقم أقل يعني ظهوراً أعلى</small>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label style="display: flex; align-items: center; gap: 10px;">
-                            <span>تفعيل التصنيف</span>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="categoryActive" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </label>
-                    </div>
-                    
-                    <div class="form-group">
-                        <button type="submit" class="btn btn-primary btn-block" id="submitBtn">
-                            <i class="fas fa-save"></i> حفظ التصنيف
+                    <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn btn-success" onclick="saveCategoriesToSupabase()">
+                            <i class="fas fa-cloud-upload-alt"></i> حفظ في Supabase
+                        </button>
+                        <button class="btn btn-info" onclick="loadCategoriesFromSupabase()">
+                            <i class="fas fa-cloud-download-alt"></i> تحميل من Supabase
+                        </button>
+                        <button class="btn btn-warning" onclick="generateCategoriesFromProducts()">
+                            <i class="fas fa-magic"></i> توليد من المنتجات
+                        </button>
+                        <button class="btn btn-danger" onclick="clearAllCategories()">
+                            <i class="fas fa-trash"></i> حذف الكل
                         </button>
                     </div>
-                </form>
+                </div>
             </div>
 
-            <!-- Categories List Section -->
-            <div class="section-card">
-                <h2><i class="fas fa-list"></i> قائمة التصنيفات</h2>
+            <!-- Preview Section -->
+            <div class="preview-section">
+                <h2><i class="fas fa-eye"></i> معاينة الهيدر</h2>
+                <p>معاينة كيف سيظهر الهيدر مع التصنيفات الحالية:</p>
                 
-                <div class="active-categories">
-                    <h3><i class="fas fa-check-circle"></i> التصنيفات النشطة في الهيدر</h3>
-                    <div class="active-categories-list" id="activeCategoriesList">
-                        <!-- Active categories will be populated here -->
+                <div class="header-preview">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <div style="font-weight: 700; color: var(--main-color);">ابن المختار للأدوات المنزلية</div>
+                        <div style="display: flex; gap: 10px;">
+                            <button style="padding: 5px 10px; background: #f0f0f0; border: none; border-radius: 5px; font-size: 12px;">🌙</button>
+                            <button style="padding: 5px 10px; background: #f0f0f0; border: none; border-radius: 5px; font-size: 12px;">ريال يمني</button>
+                        </div>
                     </div>
-                </div>
-                
-                <div style="margin-top: 20px;">
-                    <div class="categories-list" id="categoriesList">
-                        <!-- Categories will be populated here -->
+                    
+                    <div style="margin-bottom: 15px; padding: 8px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
+                        <span style="color: var(--secondary-color);">🔍</span>
+                        <span style="color: #999; font-size: 14px;">ابحث عن منتج أو تصنيف...</span>
                     </div>
-                </div>
-                
-                <div style="margin-top: 20px; display: flex; gap: 10px;">
-                    <button class="btn btn-success btn-block" onclick="saveCategoriesOrder()">
-                        <i class="fas fa-check"></i> حفظ الترتيب
-                    </button>
-                    <button class="btn btn-danger" onclick="clearAllCategories()">
-                        <i class="fas fa-trash"></i> حذف الكل
-                    </button>
+                    
+                    <div class="preview-categories" id="previewCategories">
+                        <!-- Preview categories will be populated here -->
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Preview Section -->
-        <div class="preview-section">
-            <h2><i class="fas fa-eye"></i> معاينة الهيدر</h2>
-            <p>معاينة كيف سيظهر الهيدر مع التصنيفات الحالية:</p>
-            
-            <div class="header-preview">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                    <div style="font-weight: 700; color: var(--main-color);">ابن المختار للأدوات المنزلية</div>
-                    <div style="display: flex; gap: 10px;">
-                        <button style="padding: 5px 10px; background: #f0f0f0; border: none; border-radius: 5px; font-size: 12px;">🌙</button>
-                        <button style="padding: 5px 10px; background: #f0f0f0; border: none; border-radius: 5px; font-size: 12px;">ريال يمني</button>
+        <!-- Products Categorization Tab -->
+        <div id="productsTab" class="tab-content">
+            <div class="section-card">
+                <h2><i class="fas fa-box"></i> تصنيف المنتجات</h2>
+                
+                <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="loadUncategorizedProducts()">
+                        <i class="fas fa-search"></i> عرض المنتجات بدون تصنيف
+                    </button>
+                    <button class="btn btn-success" onclick="loadAllProductsForCategorization()">
+                        <i class="fas fa-list"></i> عرض جميع المنتجات
+                    </button>
+                    <button class="btn btn-info" onclick="showBulkCategorization()">
+                        <i class="fas fa-edit"></i> تصنيف جماعي
+                    </button>
+                </div>
+                
+                <div id="productsContainer">
+                    <!-- Products will be loaded here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Sync Tab -->
+        <div id="syncTab" class="tab-content">
+            <div class="section-card">
+                <h2><i class="fas fa-sync-alt"></i> مزامنة التصنيفات</h2>
+                
+                <div style="margin-bottom: 20px;">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>نظام المزامنة الفورية:</strong> التغييرات تصل لجميع المستخدمين مباشرة
                     </div>
                 </div>
                 
-                <div style="margin-bottom: 15px; padding: 8px; background: #f8f9fa; border-radius: 8px; display: flex; align-items: center; gap: 8px;">
-                    <span style="color: var(--secondary-color);">🔍</span>
-                    <span style="color: #999; font-size: 14px;">ابحث عن منتج أو تصنيف...</span>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-label">التصنيفات المحلية</div>
+                        <div class="stat-value" id="localCategoriesCount">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">التصنيفات في Supabase</div>
+                        <div class="stat-value" id="supabaseCategoriesCount">0</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">حالة الاتصال</div>
+                        <div class="stat-value">
+                            <span id="connectionStatus" class="connection-status status-disconnected">غير معروف</span>
+                        </div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-label">آخر تحديث</div>
+                        <div class="stat-value" id="lastSyncTime">أبداً</div>
+                    </div>
                 </div>
                 
-                <div class="preview-categories" id="previewCategories">
-                    <!-- Preview categories will be populated here -->
+                <div style="margin-top: 30px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-success" onclick="syncCategoriesToSupabase()">
+                        <i class="fas fa-upload"></i> رفع التصنيفات إلى Supabase
+                    </button>
+                    <button class="btn btn-primary" onclick="syncCategoriesFromSupabase()">
+                        <i class="fas fa-download"></i> سحب التصنيفات من Supabase
+                    </button>
+                    <button class="btn btn-warning" onclick="compareCategories()">
+                        <i class="fas fa-exchange-alt"></i> مقارنة التصنيفات
+                    </button>
+                    <button class="btn btn-info" onclick="showDatabaseSetupInstructions()">
+                        <i class="fas fa-code"></i> تعليمات إعداد قاعدة البيانات
+                    </button>
+                    <button class="btn btn-danger" onclick="resetCategories()">
+                        <i class="fas fa-redo"></i> إعادة تعيين
+                    </button>
+                </div>
+                
+                <div id="syncResults" style="margin-top: 30px;">
+                    <!-- Sync results will be shown here -->
                 </div>
             </div>
         </div>
@@ -699,12 +1085,22 @@
     <!-- Footer -->
     <footer class="admin-footer">
         <p>© 2024 متجر ابن المختار للأدوات المنزلية. جميع الحقوق محفوظة.</p>
-        <p>نظام إدارة التصنيفات - الإصدار 1.0</p>
+        <p>نظام إدارة تصنيفات المنتجات - الإصدار 4.0 (مزامنة فورية)</p>
     </footer>
 
     <!-- JavaScript -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.14.0/Sortable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script>
+        // ====================== إعدادات Supabase ======================
+        const SUPABASE_URL = 'https://ukjgzbgzzmlprnhlwgpr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVramd6Ymd6em1scHJuaGx3Z3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NTM4NzAsImV4cCI6MjA4MTIyOTg3MH0.A-xvwqyDxwxDTeiB8nBgOwrJTPLWenYlO99nxbgobTw';
+        
+        let sb = null;
+        let isSupabaseInitialized = false;
+        let realtimeSubscription = null;
+        let isOnline = false;
+
         // Default icons list
         const defaultIcons = [
             'fas fa-home', 'fas fa-tag', 'fas fa-star', 'fas fa-fire', 'fas fa-gift',
@@ -717,8 +1113,11 @@
             'fas fa-percent', 'fas fa-tags', 'fas fa-box-open', 'fas fa-gem'
         ];
 
-        // Initialize categories from localStorage
-        let categories = JSON.parse(localStorage.getItem('headerCategories')) || [];
+        // Global variables
+        let categories = [];
+        let products = [];
+        let currentCategoryId = null;
+        let isSyncing = false;
 
         // DOM Elements
         const categoryForm = document.getElementById('categoryForm');
@@ -727,26 +1126,690 @@
         const activeCategoriesList = document.getElementById('activeCategoriesList');
         const iconsGrid = document.getElementById('iconsGrid');
         const alertContainer = document.getElementById('alertContainer');
+        const productsContainer = document.getElementById('productsContainer');
+        const syncResults = document.getElementById('syncResults');
+        const realtimeIndicator = document.getElementById('realtimeIndicator');
+        const realtimeBadge = document.getElementById('realtimeBadge');
         
         // Stats Elements
         const totalCategoriesEl = document.getElementById('totalCategories');
         const activeCategoriesEl = document.getElementById('activeCategories');
-        const lastUpdateEl = document.getElementById('lastUpdate');
+        const categorizedProductsEl = document.getElementById('categorizedProducts');
+        const uncategorizedProductsEl = document.getElementById('uncategorizedProducts');
+        const localCategoriesCountEl = document.getElementById('localCategoriesCount');
+        const supabaseCategoriesCountEl = document.getElementById('supabaseCategoriesCount');
+        const connectionStatusEl = document.getElementById('connectionStatus');
+        const lastSyncTimeEl = document.getElementById('lastSyncTime');
+        const statsContainer = document.getElementById('statsContainer');
+        const activitiesContainer = document.getElementById('activitiesContainer');
 
         // Initialize the page
-        document.addEventListener('DOMContentLoaded', function() {
-            initIconsGrid();
-            renderCategories();
-            updateStats();
-            initSortable();
-            updatePreview();
-            
-            // Set last update time
-            const lastUpdate = localStorage.getItem('categoriesLastUpdate');
-            if (lastUpdate) {
-                lastUpdateEl.textContent = new Date(lastUpdate).toLocaleString('ar-YE');
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                initIconsGrid();
+                await initializeSupabase();
+                await loadInitialData();
+                initSortable();
+                updatePreview();
+                updateStats();
+                updateSyncStats();
+                
+                // Start real-time updates
+                if (isSupabaseInitialized) {
+                    subscribeToRealTimeUpdates();
+                    showRealtimeIndicator();
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في تهيئة الصفحة:', error);
+                showAlert('حدث خطأ في تحميل النظام', 'danger');
             }
         });
+
+        // ====================== إعداد Supabase ======================
+
+        /**
+         * تهيئة اتصال Supabase
+         */
+        async function initializeSupabase() {
+            try {
+                if (!window.supabase) {
+                    throw new Error('مكتبة Supabase غير محملة');
+                }
+                
+                sb = supabase.createClient(
+                    SUPABASE_URL,
+                    SUPABASE_ANON_KEY,
+                    {
+                        auth: { persistSession: false },
+                        global: { headers: { 'apikey': SUPABASE_ANON_KEY } },
+                        realtime: { params: { eventsPerSecond: 10 } }
+                    }
+                );
+                
+                // اختبار الاتصال
+                const { data, error } = await sb
+                    .from('categories')
+                    .select('id')
+                    .limit(1)
+                    .maybeSingle();
+                
+                if (error && error.code !== 'PGRST116') {
+                    throw error;
+                }
+                
+                isSupabaseInitialized = true;
+                isOnline = true;
+                updateConnectionStatus();
+                console.log('✅ تم تهيئة Supabase بنجاح');
+                
+                return true;
+                
+            } catch (error) {
+                console.error('❌ خطأ في تهيئة Supabase:', error);
+                isSupabaseInitialized = false;
+                isOnline = false;
+                updateConnectionStatus();
+                return false;
+            }
+        }
+
+        /**
+         * تحديث حالة الاتصال في الواجهة
+         */
+        function updateConnectionStatus() {
+            if (!connectionStatusEl) return;
+            
+            if (isOnline && isSupabaseInitialized) {
+                connectionStatusEl.textContent = 'متصل ✓';
+                connectionStatusEl.className = 'connection-status status-connected';
+            } else {
+                connectionStatusEl.textContent = 'غير متصل';
+                connectionStatusEl.className = 'connection-status status-disconnected';
+            }
+        }
+
+        /**
+         * إظهار مؤشر المزامنة المباشرة
+         */
+        function showRealtimeIndicator() {
+            if (realtimeIndicator) {
+                realtimeIndicator.style.display = 'flex';
+            }
+            if (realtimeBadge) {
+                realtimeBadge.style.display = 'inline-block';
+            }
+        }
+
+        /**
+         * إخفاء مؤشر المزامنة المباشرة
+         */
+        function hideRealtimeIndicator() {
+            if (realtimeIndicator) {
+                realtimeIndicator.style.display = 'none';
+            }
+            if (realtimeBadge) {
+                realtimeBadge.style.display = 'none';
+            }
+        }
+
+        // ====================== الاشتراك في التحديثات الفورية ======================
+
+        /**
+         * الاشتراك في التحديثات الفورية من Supabase
+         */
+        function subscribeToRealTimeUpdates() {
+            if (!sb || !isSupabaseInitialized) {
+                console.warn('⚠️ لا يمكن الاشتراك: Supabase غير مهيأ');
+                return;
+            }
+            
+            try {
+                // إلغاء أي اشتراك سابق
+                if (realtimeSubscription) {
+                    sb.removeChannel(realtimeSubscription);
+                }
+                
+                // إنشاء اشتراك جديد
+                realtimeSubscription = sb
+                    .channel('categories-realtime')
+                    .on(
+                        'postgres_changes',
+                        {
+                            event: '*',
+                            schema: 'public',
+                            table: 'categories'
+                        },
+                        async (payload) => {
+                            console.log('📡 تحديث مباشر:', payload);
+                            
+                            switch (payload.eventType) {
+                                case 'INSERT':
+                                    await handleRealtimeInsert(payload.new);
+                                    break;
+                                case 'UPDATE':
+                                    await handleRealtimeUpdate(payload.new);
+                                    break;
+                                case 'DELETE':
+                                    await handleRealtimeDelete(payload.old.id);
+                                    break;
+                            }
+                        }
+                    )
+                    .subscribe((status) => {
+                        console.log('📡 حالة الاشتراك:', status);
+                        if (status === 'SUBSCRIBED') {
+                            console.log('✅ تم الاشتراك في التحديثات الفورية');
+                        }
+                    });
+                    
+            } catch (error) {
+                console.error('❌ خطأ في الاشتراك الفوري:', error);
+            }
+        }
+
+        /**
+         * معالجة إضافة تصنيف جديد من Supabase
+         */
+        async function handleRealtimeInsert(newCategory) {
+            try {
+                // التحقق مما إذا كان التصنيف موجوداً محلياً
+                const existingIndex = categories.findIndex(c => c.supabase_id === newCategory.id);
+                
+                if (existingIndex === -1) {
+                    // إنشاء ID محلي جديد
+                    const newLocalId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
+                    
+                    // إضافة التصنيف الجديد
+                    const categoryData = {
+                        id: newLocalId,
+                        supabase_id: newCategory.id,
+                        name: newCategory.name,
+                        icon: newCategory.icon || 'fas fa-tag',
+                        color: newCategory.color || '#FF8C00',
+                        order: newCategory.order || 1,
+                        active: newCategory.active !== undefined ? newCategory.active : true,
+                        type: newCategory.type || 'store',
+                        created_at: newCategory.created_at,
+                        updated_at: newCategory.updated_at
+                    };
+                    
+                    categories.push(categoryData);
+                    saveToLocalStorage();
+                    renderCategories();
+                    updatePreview();
+                    updateStats();
+                    updateSyncStats();
+                    
+                    // إظهار تنبيه
+                    showToast(`تم إضافة تصنيف جديد: ${newCategory.name}`, 'success');
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في معالجة الإضافة الفورية:', error);
+            }
+        }
+
+        /**
+         * معالجة تحديث تصنيف من Supabase
+         */
+        async function handleRealtimeUpdate(updatedCategory) {
+            try {
+                // البحث عن التصنيف محلياً
+                const index = categories.findIndex(c => c.supabase_id === updatedCategory.id);
+                
+                if (index !== -1) {
+                    // تحديث البيانات المحلية
+                    categories[index] = {
+                        ...categories[index],
+                        name: updatedCategory.name,
+                        icon: updatedCategory.icon || 'fas fa-tag',
+                        color: updatedCategory.color || '#FF8C00',
+                        order: updatedCategory.order || 1,
+                        active: updatedCategory.active !== undefined ? updatedCategory.active : true,
+                        updated_at: updatedCategory.updated_at
+                    };
+                    
+                    saveToLocalStorage();
+                    renderCategories();
+                    updatePreview();
+                    updateStats();
+                    
+                    // إظهار تنبيه
+                    showToast(`تم تحديث تصنيف: ${updatedCategory.name}`, 'info');
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في معالجة التحديث الفوري:', error);
+            }
+        }
+
+        /**
+         * معالجة حذف تصنيف من Supabase
+         */
+        async function handleRealtimeDelete(categoryId) {
+            try {
+                // البحث عن التصنيف محلياً
+                const index = categories.findIndex(c => c.supabase_id === categoryId);
+                
+                if (index !== -1) {
+                    const categoryName = categories[index].name;
+                    
+                    // حذف التصنيف محلياً
+                    categories.splice(index, 1);
+                    saveToLocalStorage();
+                    renderCategories();
+                    updatePreview();
+                    updateStats();
+                    updateSyncStats();
+                    
+                    // إظهار تنبيه
+                    showToast(`تم حذف تصنيف: ${categoryName}`, 'warning');
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في معالجة الحذف الفوري:', error);
+            }
+        }
+
+        // ====================== وظائف CRUD مع Supabase ======================
+
+        /**
+         * تحميل البيانات الأولية
+         */
+        async function loadInitialData() {
+            showLoading('جاري تحميل البيانات...');
+            
+            try {
+                let loadedFromSupabase = false;
+                
+                if (isSupabaseInitialized) {
+                    const supabaseCategories = await fetchCategoriesFromSupabase();
+                    
+                    if (supabaseCategories && supabaseCategories.length > 0) {
+                        categories = supabaseCategories;
+                        loadedFromSupabase = true;
+                        console.log(`✅ تم تحميل ${categories.length} تصنيف من Supabase`);
+                    }
+                }
+                
+                if (!loadedFromSupabase) {
+                    const savedCategories = JSON.parse(localStorage.getItem('headerCategories')) || [];
+                    
+                    if (savedCategories.length > 0) {
+                        categories = savedCategories;
+                        console.log('📂 تم تحميل التصنيفات من التخزين المحلي');
+                    } else {
+                        await createDefaultCategories();
+                    }
+                }
+                
+                // إذا كان هناك تصنيفات بدون supabase_id، حاول مزامنتها
+                const unsyncedCategories = categories.filter(c => !c.supabase_id);
+                if (unsyncedCategories.length > 0 && isSupabaseInitialized) {
+                    console.log(`🔄 هناك ${unsyncedCategories.length} تصنيف غير مزامن`);
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل البيانات:', error);
+                showAlert('حدث خطأ في تحميل البيانات', 'danger');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        /**
+         * جلب التصنيفات من Supabase
+         */
+        async function fetchCategoriesFromSupabase() {
+            if (!sb || !isSupabaseInitialized) return [];
+            
+            try {
+                const { data, error } = await sb
+                    .from('categories')
+                    .select('*')
+                    .order('order', { ascending: true });
+                
+                if (error) throw error;
+                
+                if (data && data.length > 0) {
+                    return data.map((cat, index) => ({
+                        id: index + 1, // ID محلي
+                        supabase_id: cat.id, // ID من Supabase
+                        name: cat.name,
+                        icon: cat.icon || 'fas fa-tag',
+                        color: cat.color || '#FF8C00',
+                        order: cat.order || 1,
+                        active: cat.active !== undefined ? cat.active : true,
+                        type: cat.type || 'store',
+                        created_at: cat.created_at,
+                        updated_at: cat.updated_at
+                    }));
+                }
+                
+                return [];
+            } catch (error) {
+                console.error('❌ خطأ في جلب التصنيفات:', error);
+                return [];
+            }
+        }
+
+        /**
+         * إنشاء تصنيفات افتراضية
+         */
+        async function createDefaultCategories() {
+            const defaultCategories = [
+                { name: 'الكل', icon: 'fas fa-home', color: '#FF8C00', order: 1, active: true },
+                { name: 'أجهزة منزلية', icon: 'fas fa-blender', color: '#28a745', order: 2, active: true },
+                { name: 'إلكترونيات', icon: 'fas fa-mobile', color: '#17a2b8', order: 3, active: true },
+                { name: 'أثاث', icon: 'fas fa-couch', color: '#6f42c1', order: 4, active: true }
+            ];
+            
+            categories = defaultCategories.map((cat, index) => ({
+                id: index + 1,
+                name: cat.name,
+                icon: cat.icon,
+                color: cat.color,
+                order: cat.order,
+                active: cat.active
+            }));
+            
+            saveToLocalStorage();
+            showAlert('تم إنشاء تصنيفات افتراضية', 'info');
+        }
+
+        /**
+         * إضافة تصنيف جديد إلى Supabase
+         */
+        async function addCategoryToSupabase(categoryData) {
+            if (!sb || !isSupabaseInitialized) {
+                throw new Error('غير متصل بـ Supabase');
+            }
+            
+            try {
+                const { data, error } = await sb
+                    .from('categories')
+                    .insert([{
+                        name: categoryData.name,
+                        icon: categoryData.icon,
+                        color: categoryData.color,
+                        order: categoryData.order,
+                        type: 'store',
+                        active: categoryData.active
+                    }])
+                    .select()
+                    .single();
+                
+                if (error) throw error;
+                
+                console.log('✅ تم إضافة التصنيف إلى Supabase:', data);
+                return data;
+                
+            } catch (error) {
+                console.error('❌ خطأ في إضافة التصنيف:', error);
+                throw error;
+            }
+        }
+
+        /**
+         * تحديث تصنيف في Supabase
+         */
+        async function updateCategoryInSupabase(categoryId, categoryData) {
+            if (!sb || !isSupabaseInitialized) {
+                throw new Error('غير متصل بـ Supabase');
+            }
+            
+            try {
+                const { error } = await sb
+                    .from('categories')
+                    .update({
+                        name: categoryData.name,
+                        icon: categoryData.icon,
+                        color: categoryData.color,
+                        order: categoryData.order,
+                        active: categoryData.active,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', categoryId);
+                
+                if (error) throw error;
+                
+                console.log('✅ تم تحديث التصنيف في Supabase:', categoryId);
+                return true;
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحديث التصنيف:', error);
+                throw error;
+            }
+        }
+
+        /**
+         * حذف تصنيف من Supabase
+         */
+        async function deleteCategoryFromSupabase(categoryId) {
+            if (!sb || !isSupabaseInitialized) {
+                throw new Error('غير متصل بـ Supabase');
+            }
+            
+            try {
+                const { error } = await sb
+                    .from('categories')
+                    .delete()
+                    .eq('id', categoryId);
+                
+                if (error) throw error;
+                
+                console.log('✅ تم حذف التصنيف من Supabase:', categoryId);
+                return true;
+                
+            } catch (error) {
+                console.error('❌ خطأ في حذف التصنيف:', error);
+                throw error;
+            }
+        }
+
+        // ====================== معالجة النموذج ======================
+
+        /**
+         * معالجة إرسال النموذج
+         */
+        categoryForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('categoryId').value;
+            const name = document.getElementById('categoryName').value;
+            const icon = document.getElementById('categoryIcon').value;
+            const color = document.getElementById('categoryColor').value;
+            const order = parseInt(document.getElementById('categoryOrder').value) || 1;
+            const active = document.getElementById('categoryActive').checked;
+            
+            if (!name.trim()) {
+                showAlert('يرجى إدخال اسم التصنيف', 'danger');
+                return;
+            }
+            
+            // التحقق من عدم تكرار الاسم
+            const existingCategory = categories.find(cat => 
+                cat.name.toLowerCase() === name.toLowerCase() && 
+                (id ? cat.id != id : true)
+            );
+            
+            if (existingCategory) {
+                showAlert('اسم التصنيف موجود بالفعل', 'danger');
+                return;
+            }
+            
+            const categoryData = { name, icon, color, order, active };
+            
+            if (id) {
+                // تحديث تصنيف موجود
+                await updateCategoryHandler(id, categoryData);
+            } else {
+                // إضافة تصنيف جديد
+                await addCategoryHandler(categoryData);
+            }
+        });
+
+        /**
+         * معالج إضافة تصنيف جديد
+         */
+        async function addCategoryHandler(categoryData) {
+            showLoading('جاري إضافة التصنيف...');
+            
+            try {
+                let supabaseCategory = null;
+                
+                if (isSupabaseInitialized) {
+                    // حاول الإضافة إلى Supabase أولاً
+                    supabaseCategory = await addCategoryToSupabase(categoryData);
+                }
+                
+                if (supabaseCategory) {
+                    // تمت الإضافة إلى Supabase بنجاح
+                    // سيتم معالجتها من خلال Real-time subscription
+                    showAlert('تم إضافة التصنيف بنجاح', 'success');
+                    resetForm();
+                    
+                } else {
+                    // الإضافة محلياً فقط
+                    const newId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
+                    const newCategory = {
+                        id: newId,
+                        name: categoryData.name,
+                        icon: categoryData.icon,
+                        color: categoryData.color,
+                        order: categoryData.order,
+                        active: categoryData.active
+                    };
+                    
+                    categories.push(newCategory);
+                    saveToLocalStorage();
+                    renderCategories();
+                    updatePreview();
+                    updateStats();
+                    updateSyncStats();
+                    
+                    showAlert('تم إضافة التصنيف محلياً', isSupabaseInitialized ? 'warning' : 'success');
+                    resetForm();
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في إضافة التصنيف:', error);
+                
+                // محاولة الإضافة محلياً كبديل
+                const newId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
+                const newCategory = {
+                    id: newId,
+                    name: categoryData.name,
+                    icon: categoryData.icon,
+                    color: categoryData.color,
+                    order: categoryData.order,
+                    active: categoryData.active
+                };
+                
+                categories.push(newCategory);
+                saveToLocalStorage();
+                renderCategories();
+                updatePreview();
+                updateStats();
+                updateSyncStats();
+                
+                showAlert('تم إضافة التصنيف محلياً (خطأ في الاتصال بالسحابة)', 'warning');
+                resetForm();
+                
+            } finally {
+                hideLoading();
+            }
+        }
+
+        /**
+         * معالج تحديث تصنيف موجود
+         */
+        async function updateCategoryHandler(categoryId, categoryData) {
+            showLoading('جاري تحديث التصنيف...');
+            
+            try {
+                const category = categories.find(c => c.id == categoryId);
+                if (!category) {
+                    throw new Error('التصنيف غير موجود');
+                }
+                
+                let updatedInSupabase = false;
+                
+                if (isSupabaseInitialized && category.supabase_id) {
+                    // حاول التحديث في Supabase
+                    updatedInSupabase = await updateCategoryInSupabase(category.supabase_id, categoryData);
+                }
+                
+                if (updatedInSupabase) {
+                    // تم التحديث في Supabase بنجاح
+                    // سيتم معالجته من خلال Real-time subscription
+                    showAlert('تم تحديث التصنيف بنجاح', 'success');
+                    resetForm();
+                    
+                } else {
+                    // التحديث محلياً فقط
+                    const index = categories.findIndex(c => c.id == categoryId);
+                    if (index !== -1) {
+                        categories[index] = {
+                            ...categories[index],
+                            name: categoryData.name,
+                            icon: categoryData.icon,
+                            color: categoryData.color,
+                            order: categoryData.order,
+                            active: categoryData.active
+                        };
+                        
+                        // إزالة supabase_id لأنه لم يتم المزامنة
+                        delete categories[index].supabase_id;
+                        
+                        saveToLocalStorage();
+                        renderCategories();
+                        updatePreview();
+                        updateStats();
+                        updateSyncStats();
+                        
+                        showAlert('تم تحديث التصنيف محلياً', isSupabaseInitialized ? 'warning' : 'success');
+                        resetForm();
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحديث التصنيف:', error);
+                showAlert('فشل تحديث التصنيف', 'danger');
+                
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // ====================== وظائف الواجهة ======================
+
+        // Tab switching
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tab buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').classList.add('active');
+            
+            // Add active class to clicked button
+            event.target.classList.add('active');
+            
+            // Load data for specific tabs
+            if (tabName === 'products') {
+                loadUncategorizedProducts();
+            } else if (tabName === 'sync') {
+                updateSyncStats();
+            }
+        }
 
         // Initialize icons grid
         function initIconsGrid() {
@@ -806,6 +1869,10 @@
                 categoryItem.className = 'category-item';
                 categoryItem.dataset.id = category.id;
                 
+                // Check if category is in Supabase
+                const isInSupabase = category.supabase_id ? 'نعم' : 'لا';
+                const badgeClass = category.supabase_id ? 'badge-success' : 'badge-warning';
+                
                 categoryItem.innerHTML = `
                     <div class="category-info">
                         <div class="drag-handle">
@@ -814,11 +1881,12 @@
                         <div class="category-icon" style="background: ${category.color}20; color: ${category.color};">
                             <i class="${category.icon}"></i>
                         </div>
-                        <div>
+                        <div style="flex: 1;">
                             <div class="category-name">${category.name}</div>
                             <div style="font-size: 12px; color: #666;">
                                 الترتيب: ${category.order} | 
-                                ${category.active ? 'نشط' : 'غير نشط'}
+                                ${category.active ? 'نشط' : 'غير نشط'} |
+                                في Supabase: <span class="badge ${badgeClass}">${isInSupabase}</span>
                             </div>
                         </div>
                     </div>
@@ -862,7 +1930,7 @@
         }
 
         // Update categories order after drag and drop
-        function updateCategoriesOrder() {
+        async function updateCategoriesOrder() {
             const items = categoriesList.querySelectorAll('.category-item');
             items.forEach((item, index) => {
                 const id = parseInt(item.dataset.id);
@@ -872,16 +1940,35 @@
                 }
             });
             
+            // تحديث الترتيب في Supabase للمصنفات المزامنة
+            if (isSupabaseInitialized) {
+                showLoading('جاري تحديث الترتيب في السحابة...');
+                
+                try {
+                    for (const category of categories) {
+                        if (category.supabase_id) {
+                            await sb
+                                .from('categories')
+                                .update({ order: category.order })
+                                .eq('id', category.supabase_id);
+                        }
+                    }
+                    
+                    hideLoading();
+                    showAlert('تم تحديث ترتيب التصنيفات محلياً وفي السحابة', 'success');
+                    
+                } catch (error) {
+                    console.error('❌ خطأ في تحديث الترتيب في السحابة:', error);
+                    hideLoading();
+                    showAlert('تم تحديث الترتيب محلياً فقط', 'warning');
+                }
+            } else {
+                showAlert('تم تحديث ترتيب التصنيفات محلياً', 'success');
+            }
+            
             // Re-render to show new order
             renderCategories();
             updatePreview();
-            showAlert('تم تحديث ترتيب التصنيفات', 'success');
-        }
-
-        // Save categories order
-        function saveCategoriesOrder() {
-            saveToLocalStorage();
-            showAlert('تم حفظ ترتيب التصنيفات بنجاح', 'success');
         }
 
         // Update preview
@@ -917,58 +2004,6 @@
             });
         }
 
-        // Form submit handler
-        categoryForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const id = document.getElementById('categoryId').value;
-            const name = document.getElementById('categoryName').value;
-            const icon = document.getElementById('categoryIcon').value;
-            const color = document.getElementById('categoryColor').value;
-            const order = parseInt(document.getElementById('categoryOrder').value) || 1;
-            const active = document.getElementById('categoryActive').checked;
-            
-            if (!name.trim()) {
-                showAlert('يرجى إدخال اسم التصنيف', 'danger');
-                return;
-            }
-            
-            if (id) {
-                // Edit existing category
-                const index = categories.findIndex(c => c.id == id);
-                if (index !== -1) {
-                    categories[index] = { 
-                        id: parseInt(id), 
-                        name, 
-                        icon, 
-                        color, 
-                        order, 
-                        active 
-                    };
-                    showAlert('تم تعديل التصنيف بنجاح', 'success');
-                }
-            } else {
-                // Add new category
-                const newId = categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1;
-                categories.push({ 
-                    id: newId, 
-                    name, 
-                    icon, 
-                    color, 
-                    order, 
-                    active: true 
-                });
-                showAlert('تم إضافة التصنيف بنجاح', 'success');
-            }
-            
-            // Save and update
-            saveToLocalStorage();
-            renderCategories();
-            updatePreview();
-            updateStats();
-            resetForm();
-        });
-
         // Edit category
         function editCategory(id) {
             const category = categories.find(c => c.id === id);
@@ -998,17 +2033,54 @@
         }
 
         // Delete category
-        function deleteCategory(id) {
-            if (!confirm('هل أنت متأكد من حذف هذا التصنيف؟')) return;
+        async function deleteCategory(id) {
+            const category = categories.find(c => c.id === id);
+            if (!category) return;
             
-            const index = categories.findIndex(c => c.id === id);
-            if (index !== -1) {
-                categories.splice(index, 1);
-                saveToLocalStorage();
-                renderCategories();
-                updatePreview();
-                updateStats();
-                showAlert('تم حذف التصنيف بنجاح', 'success');
+            let message = 'هل أنت متأكد من حذف هذا التصنيف؟';
+            if (category.supabase_id && isSupabaseInitialized) {
+                message += '\nسيتم حذفه من السحابة أيضاً (سيختفي من جميع الأجهزة)';
+            } else {
+                message += '\nسيتم حذفه محلياً فقط';
+            }
+            
+            if (!confirm(message)) return;
+            
+            showLoading('جاري حذف التصنيف...');
+            
+            try {
+                let deletedFromSupabase = false;
+                
+                // حذف من Supabase إذا كان متصلاً
+                if (isSupabaseInitialized && category.supabase_id) {
+                    deletedFromSupabase = await deleteCategoryFromSupabase(category.supabase_id);
+                }
+                
+                // حذف محلياً في جميع الأحوال
+                const index = categories.findIndex(c => c.id === id);
+                if (index !== -1) {
+                    categories.splice(index, 1);
+                    saveToLocalStorage();
+                    renderCategories();
+                    updatePreview();
+                    updateStats();
+                    updateSyncStats();
+                    
+                    if (deletedFromSupabase) {
+                        showAlert('تم حذف التصنيف من السحابة والمحلي', 'success');
+                    } else if (category.supabase_id) {
+                        showAlert('تم حذف التصنيف محلياً (فشل الحذف من السحابة)', 'warning');
+                    } else {
+                        showAlert('تم حذف التصنيف محلياً', 'success');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في حذف التصنيف:', error);
+                showAlert('فشل حذف التصنيف', 'danger');
+                
+            } finally {
+                hideLoading();
             }
         }
 
@@ -1021,6 +2093,8 @@
             renderCategories();
             updatePreview();
             updateStats();
+            updateSyncStats();
+            
             showAlert('تم حذف جميع التصنيفات', 'success');
         }
 
@@ -1047,32 +2121,298 @@
             localStorage.setItem('categoriesLastUpdate', new Date().toISOString());
             localStorage.setItem('categoriesUpdated', Date.now().toString());
             
-            // Update last update time
-            lastUpdateEl.textContent = 'الآن';
-            
-            showAlert('تم حفظ التصنيفات بنجاح! سيتم تحديث الهيدر تلقائياً.', 'success');
-            
-            // تحديث المعاينة
-            updatePreview();
+            // تحديث وقت آخر مزامنة
+            localStorage.setItem('lastSyncTime', new Date().toISOString());
         }
+
+        // ====================== الإحصائيات والتقارير ======================
 
         // Update statistics
         function updateStats() {
             totalCategoriesEl.textContent = categories.length;
             activeCategoriesEl.textContent = categories.filter(c => c.active).length;
             
-            // Update order status
-            const orderStatus = document.getElementById('orderStatus');
-            const isSorted = categories.every((cat, index) => cat.order === index + 1);
-            orderStatus.textContent = isSorted ? 'مفعل' : 'غير مرتب';
-            orderStatus.style.color = isSorted ? 'var(--success)' : 'var(--warning)';
+            // Update local categories count
+            localCategoriesCountEl.textContent = categories.length;
+            
+            // Update detailed stats
+            updateDetailedStats();
         }
+
+        // Update detailed statistics
+        function updateDetailedStats() {
+            // Create stats HTML
+            let statsHTML = '<div class="stats-grid">';
+            
+            // Category count
+            statsHTML += `
+                <div class="stat-item">
+                    <div class="stat-label">إجمالي التصنيفات</div>
+                    <div class="stat-value">${categories.length}</div>
+                </div>
+            `;
+            
+            // Active categories
+            statsHTML += `
+                <div class="stat-item">
+                    <div class="stat-label">التصنيفات النشطة</div>
+                    <div class="stat-value">${categories.filter(c => c.active).length}</div>
+                </div>
+            `;
+            
+            // Synced categories
+            const syncedCount = categories.filter(c => c.supabase_id).length;
+            const syncPercentage = categories.length > 0 ? Math.round((syncedCount / categories.length) * 100) : 0;
+            
+            statsHTML += `
+                <div class="stat-item">
+                    <div class="stat-label">المزامنة مع Supabase</div>
+                    <div class="stat-value">${syncPercentage}%</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${syncPercentage}%"></div>
+                    </div>
+                </div>
+            `;
+            
+            // Last update
+            const lastUpdate = localStorage.getItem('categoriesLastUpdate');
+            const lastUpdateText = lastUpdate ? new Date(lastUpdate).toLocaleString('ar-YE') : 'غير معروف';
+            
+            statsHTML += `
+                <div class="stat-item">
+                    <div class="stat-label">آخر تحديث</div>
+                    <div class="stat-value" style="font-size: 16px;">${lastUpdateText}</div>
+                </div>
+            `;
+            
+            statsHTML += '</div>';
+            
+            if (statsContainer) {
+                statsContainer.innerHTML = statsHTML;
+            }
+            
+            // Update activities
+            updateActivities();
+        }
+
+        // Update activities list
+        function updateActivities() {
+            const activities = [];
+            
+            // Add last sync activity
+            const lastSync = localStorage.getItem('lastSyncTime');
+            if (lastSync) {
+                activities.push({
+                    icon: 'fas fa-sync-alt',
+                    text: `آخر مزامنة: ${new Date(lastSync).toLocaleString('ar-YE')}`,
+                    type: 'sync'
+                });
+            }
+            
+            // Add last save activity
+            const lastSave = localStorage.getItem('categoriesLastUpdate');
+            if (lastSave) {
+                activities.push({
+                    icon: 'fas fa-save',
+                    text: `آخر حفظ: ${new Date(lastSave).toLocaleString('ar-YE')}`,
+                    type: 'save'
+                });
+            }
+            
+            // Add categories count activity
+            activities.push({
+                icon: 'fas fa-tags',
+                text: `إجمالي التصنيفات: ${categories.length}`,
+                type: 'info'
+            });
+            
+            // Add Supabase connection status
+            activities.push({
+                icon: isSupabaseInitialized ? 'fas fa-check-circle' : 'fas fa-times-circle',
+                text: isSupabaseInitialized ? 'متصل بـ Supabase' : 'غير متصل بـ Supabase',
+                type: isSupabaseInitialized ? 'success' : 'danger'
+            });
+            
+            // Create activities HTML
+            let activitiesHTML = '';
+            activities.forEach(activity => {
+                let color = '#666';
+                if (activity.type === 'sync') color = '#17a2b8';
+                if (activity.type === 'save') color = '#28a745';
+                if (activity.type === 'info') color = '#6f42c1';
+                if (activity.type === 'success') color = '#28a745';
+                if (activity.type === 'danger') color = '#dc3545';
+                
+                activitiesHTML += `
+                    <div style="display: flex; align-items: center; gap: 10px; padding: 10px; border-bottom: 1px solid #f0f0f0;">
+                        <i class="${activity.icon}" style="color: ${color};"></i>
+                        <span>${activity.text}</span>
+                    </div>
+                `;
+            });
+            
+            if (activitiesContainer) {
+                activitiesContainer.innerHTML = activitiesHTML;
+            }
+        }
+
+        // Update sync stats
+        async function updateSyncStats() {
+            // Update local count
+            localCategoriesCountEl.textContent = categories.length;
+            
+            // Update last sync time
+            const lastSync = localStorage.getItem('lastSyncTime');
+            lastSyncTimeEl.textContent = lastSync ? new Date(lastSync).toLocaleString('ar-YE') : 'أبداً';
+            
+            // Update Supabase count
+            try {
+                if (sb && isSupabaseInitialized) {
+                    const { count, error } = await sb
+                        .from('categories')
+                        .select('*', { count: 'exact', head: true });
+                    
+                    if (!error) {
+                        supabaseCategoriesCountEl.textContent = count || 0;
+                    } else {
+                        supabaseCategoriesCountEl.textContent = '0';
+                    }
+                }
+            } catch (error) {
+                console.error('❌ خطأ في جلب عدد التصنيفات:', error);
+                supabaseCategoriesCountEl.textContent = '0';
+            }
+            
+            // Update connection status
+            updateConnectionStatus();
+        }
+
+        // ====================== المزامنة الجماعية ======================
+
+        /**
+         * مزامنة جميع التصنيفات مع Supabase
+         */
+        async function syncCategoriesToSupabase() {
+            if (isSyncing) {
+                showAlert('جاري المزامنة بالفعل، يرجى الانتظار...', 'warning');
+                return;
+            }
+            
+            isSyncing = true;
+            showLoading('جاري مزامنة التصنيفات مع Supabase...');
+            
+            try {
+                let successCount = 0;
+                let errorCount = 0;
+                
+                // مزامنة كل تصنيف
+                for (const category of categories) {
+                    try {
+                        if (category.supabase_id) {
+                            // تحديث تصنيف موجود
+                            await updateCategoryInSupabase(category.supabase_id, {
+                                name: category.name,
+                                icon: category.icon,
+                                color: category.color,
+                                order: category.order,
+                                active: category.active
+                            });
+                        } else {
+                            // إضافة تصنيف جديد
+                            const inserted = await addCategoryToSupabase({
+                                name: category.name,
+                                icon: category.icon,
+                                color: category.color,
+                                order: category.order,
+                                active: category.active
+                            });
+                            
+                            if (inserted) {
+                                category.supabase_id = inserted.id;
+                            }
+                        }
+                        successCount++;
+                        
+                    } catch (error) {
+                        console.error('❌ خطأ في مزامنة التصنيف:', category.name, error);
+                        errorCount++;
+                    }
+                }
+                
+                // حفظ محلياً
+                saveToLocalStorage();
+                renderCategories();
+                updateSyncStats();
+                
+                hideLoading();
+                
+                if (errorCount === 0) {
+                    showAlert(`تمت مزامنة ${successCount} تصنيف بنجاح`, 'success');
+                } else {
+                    showAlert(`تمت مزامنة ${successCount} تصنيف، ${errorCount} فشلت`, 'warning');
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في المزامنة:', error);
+                showAlert('فشل في مزامنة التصنيفات', 'danger');
+                hideLoading();
+            } finally {
+                isSyncing = false;
+            }
+        }
+
+        /**
+         * تحميل التصنيفات من Supabase
+         */
+        async function syncCategoriesFromSupabase() {
+            showLoading('جاري تحميل التصنيفات من Supabase...');
+            
+            try {
+                const supabaseCategories = await fetchCategoriesFromSupabase();
+                
+                if (supabaseCategories && supabaseCategories.length > 0) {
+                    categories = supabaseCategories;
+                    
+                    // حفظ محلياً
+                    saveToLocalStorage();
+                    renderCategories();
+                    updatePreview();
+                    updateStats();
+                    updateSyncStats();
+                    
+                    hideLoading();
+                    showAlert(`تم تحميل ${categories.length} تصنيف من Supabase`, 'success');
+                    
+                } else {
+                    hideLoading();
+                    showAlert('لا توجد تصنيفات في Supabase', 'warning');
+                }
+                
+            } catch (error) {
+                console.error('❌ خطأ في تحميل التصنيفات:', error);
+                showAlert('فشل في تحميل التصنيفات من Supabase', 'danger');
+                hideLoading();
+            }
+        }
+
+        // وظائف توافقية سابقة
+        async function loadCategoriesFromSupabase() {
+            return await syncCategoriesFromSupabase();
+        }
+
+        async function saveCategoriesToSupabase() {
+            return await syncCategoriesToSupabase();
+        }
+
+        // ====================== وظائف مساعدة ======================
 
         // Show alert message
         function showAlert(message, type) {
+            if (!alertContainer) return;
+            
             alertContainer.innerHTML = `
                 <div class="alert alert-${type}">
-                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'danger' ? 'exclamation-circle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
                     ${message}
                 </div>
             `;
@@ -1088,7 +2428,170 @@
             }, 3000);
         }
 
-        // Export categories function (for backup)
+        // Show toast notification
+        function showToast(message, type) {
+            // إنشاء عنصر Toast
+            const toast = document.createElement('div');
+            toast.className = `alert alert-${type}`;
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                z-index: 1000;
+                animation: slideIn 0.3s ease;
+                max-width: 300px;
+            `;
+            
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+                ${message}
+            `;
+            
+            document.body.appendChild(toast);
+            
+            // إزالة Toast بعد 3 ثواني
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        // Show loading indicator
+        function showLoading(message) {
+            if (!alertContainer) return;
+            
+            alertContainer.innerHTML = `
+                <div class="alert alert-info">
+                    <div class="loading-spinner" style="display: inline-block; margin-right: 10px;"></div>
+                    ${message}
+                </div>
+            `;
+        }
+
+        // Hide loading indicator
+        function hideLoading() {
+            if (!alertContainer) return;
+            
+            alertContainer.innerHTML = '';
+        }
+
+        // Helper function to get category color
+        function getCategoryColor(index) {
+            const colors = [
+                '#FF8C00', '#28a745', '#17a2b8', '#6f42c1',
+                '#dc3545', '#ffc107', '#20c997', '#e83e8c',
+                '#fd7e14', '#6610f2', '#6f42c1', '#e83e8c'
+            ];
+            return colors[index % colors.length];
+        }
+
+        // ====================== وظائف المنتجات (للتوافق) ======================
+
+        // هذه الوظائف موجودة للتوافق مع الكود السابق
+        async function generateCategoriesFromProducts() {
+            showAlert('هذه الخاصية تحت التطوير', 'info');
+        }
+
+        async function loadUncategorizedProducts() {
+            showAlert('هذه الخاصية تحت التطوير', 'info');
+        }
+
+        async function loadAllProductsForCategorization() {
+            showAlert('هذه الخاصية تحت التطوير', 'info');
+        }
+
+        function showBulkCategorization() {
+            showAlert('هذه الخاصية تحت التطوير', 'info');
+        }
+
+        // ====================== وظائف المزامنة الإضافية ======================
+
+        async function compareCategories() {
+            showAlert('هذه الخاصية تحت التطوير', 'info');
+        }
+
+        function showDatabaseSetupInstructions() {
+            const instructions = `-- SQL لإنشاء جدول categories في Supabase
+
+CREATE TABLE categories (
+    id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+    name TEXT NOT NULL,
+    icon TEXT DEFAULT 'fas fa-tag',
+    color TEXT DEFAULT '#FF8C00',
+    "order" BIGINT DEFAULT 1,
+    type TEXT DEFAULT 'store',
+    active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW())
+);
+
+-- تفعيل Row Level Security
+ALTER TABLE categories ENABLE ROW LEVEL SECURITY;
+
+-- سياسة للسماح للجميع بالقراءة
+CREATE POLICY "السماح بالقراءة للجميع" 
+ON categories FOR SELECT 
+USING (true);
+
+-- سياسة للسماح بالإدخال والتحديث
+CREATE POLICY "السماح بالإدخال والتحديث" 
+ON categories FOR ALL 
+USING (true)
+WITH CHECK (true);`;
+            
+            syncResults.innerHTML = `
+                <div class="section-card">
+                    <h3><i class="fas fa-database"></i> تعليمات إعداد قاعدة البيانات</h3>
+                    <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0;">
+                        <p><strong>خطوات التنفيذ:</strong></p>
+                        <ol style="margin-right: 20px; color: #555;">
+                            <li>اذهب إلى <a href="https://supabase.com/dashboard" target="_blank">Supabase Dashboard</a></li>
+                            <li>اختر مشروعك</li>
+                            <li>اذهب إلى قسم SQL Editor</li>
+                            <li>انسخ الكود أدناه والصقه</li>
+                            <li>اضغط على Run لتنفيذه</li>
+                        </ol>
+                    </div>
+                    <textarea readonly style="width: 100%; height: 300px; font-family: monospace; padding: 15px; border: 1px solid #ddd; border-radius: 8px; background: #f8f9fa; direction: ltr; text-align: left;">
+${instructions}
+                    </textarea>
+                    <button class="btn btn-primary" onclick="copySQLInstructions()" style="margin-top: 15px;">
+                        <i class="fas fa-copy"></i> نسخ التعليمات
+                    </button>
+                </div>
+            `;
+        }
+
+        function copySQLInstructions() {
+            const instructions = document.querySelector('#syncTab textarea');
+            if (instructions) {
+                instructions.select();
+                document.execCommand('copy');
+                showAlert('تم نسخ تعليمات SQL إلى الحافظة', 'success');
+            }
+        }
+
+        function resetCategories() {
+            if (!confirm('هل أنت متأكد من إعادة تعيين التصنيفات؟ سيتم حذف جميع التصنيفات المحلية.')) {
+                return;
+            }
+            
+            categories = [];
+            localStorage.removeItem('headerCategories');
+            localStorage.removeItem('lastSyncTime');
+            
+            renderCategories();
+            updatePreview();
+            updateStats();
+            updateSyncStats();
+            
+            showAlert('تم إعادة تعيين التصنيفات بنجاح', 'success');
+        }
+
+        // ====================== تصدير واستيراد البيانات ======================
+
         function exportCategories() {
             const dataStr = JSON.stringify(categories, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -1103,7 +2606,6 @@
             showAlert('تم تصدير التصنيفات بنجاح', 'success');
         }
 
-        // Import categories function
         function importCategories() {
             const input = document.createElement('input');
             input.type = 'file';
@@ -1122,6 +2624,7 @@
                             renderCategories();
                             updatePreview();
                             updateStats();
+                            updateSyncStats();
                             showAlert('تم استيراد التصنيفات بنجاح', 'success');
                         } else {
                             showAlert('ملف غير صالح', 'danger');
@@ -1137,7 +2640,7 @@
             input.click();
         }
 
-        // Add export/import buttons to the page
+        // إضافة أزرار التصدير والاستيراد عند تحميل الصفحة
         document.addEventListener('DOMContentLoaded', function() {
             const actionsDiv = document.createElement('div');
             actionsDiv.style.cssText = `
@@ -1145,6 +2648,7 @@
                 gap: 10px;
                 margin-top: 20px;
                 justify-content: center;
+                flex-wrap: wrap;
             `;
             
             actionsDiv.innerHTML = `
@@ -1154,15 +2658,17 @@
                 <button class="btn btn-secondary" onclick="importCategories()">
                     <i class="fas fa-upload"></i> استيراد التصنيفات
                 </button>
+                <button class="btn btn-info" onclick="window.location.reload()">
+                    <i class="fas fa-redo"></i> تحديث الصفحة
+                </button>
             `;
             
-            document.querySelector('.section-card:last-child').appendChild(actionsDiv);
+            const lastSectionCard = document.querySelector('.section-card:last-child');
+            if (lastSectionCard) {
+                lastSectionCard.appendChild(actionsDiv);
+            }
         });
 
-        // Sync with main page when categories are updated
-        window.addEventListener('categoriesUpdated', function() {
-            // This event will be caught by the main page to refresh categories
-        });
     </script>
 </body>
 </html>
