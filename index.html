@@ -3053,7 +3053,23 @@ window.renderProducts = function(){
         .catch(err => console.log('Service Worker Error', err));
     });
   }
+       async function trackVisit() {
+    // إنشاء معرف فريد للمتصفح لحساب الزوار الفريدين (اختياري)
+    let visitorId = localStorage.getItem('visitor_id');
+    if (!visitorId) {
+        visitorId = 'v-' + Math.random().toString(36).substr(2, 9);
+        localStorage.setItem('visitor_id', visitorId);
+    }
+
+    await sb.from('visits').insert([{ 
+        page_path: window.location.pathname,
+        visitor_id: visitorId
+    }]);
+}
+trackVisit();
+
 </script>
  
 </body>
 </html>
+
