@@ -1475,7 +1475,9 @@
           select.add(new Option(cat.name, cat.name));
         });
       } else {
-        ["عام", "ملابس", "إلكترونيات", "أجهزة منزلية", "إكسسوارات", "أثاث", "مواد غذائية"].forEach(cat => select.add(new Option(cat, cat)));
+    ["ادوات منزليه", "أجهزة منزلية"].forEach(cat => {
+  select.add(new Option(cat, cat));
+});
       }
     } catch(e) {
       console.error('خطأ في تحميل التصنيفات:', e);
