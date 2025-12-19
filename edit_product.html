@@ -917,6 +917,7 @@
       }
       
       // 4. ================= تحديث بيانات المنتج =================
+            // 4. ================= تحديث بيانات المنتج =================
       showLoading("💾 جاري تحديث بيانات المنتج...");
       
       const updateData = {
@@ -924,7 +925,9 @@
         price: Number(price), 
         description: description, 
         category: category, 
-        image: finalImageUrls
+        image: finalImageUrls,
+        // 🔥 السطر المضاف بالأسفل يجعل المنتج يظهر كجديد في الترتيب
+        created_at: new Date().toISOString() 
       };
       
       const { error } = await sb
