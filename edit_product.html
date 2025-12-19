@@ -461,13 +461,14 @@
     return isValid;
   }
 
-  // تحميل الفئات (مع التصنيفات اليدوية)
+// --- استبدل دالة fetchProductData و loadCategories بهذا الكود المترابط ---
+
+  // 1. دالة تحميل التصنيفات (اليدوية + القاعدة)
   async function loadCategories(selectedCategory = null) {
     const select = elements.categorySelect;
     select.innerHTML = '<option value="" disabled selected>جاري تحميل التصنيفات...</option>';
     
     try {
-      // 1. محاولة جلب التصنيفات من قاعدة البيانات
       const { data: categories, error } = await sb
         .from(CATEGORIES_TABLE)
         .select('name')
@@ -475,84 +476,75 @@
       
       select.innerHTML = '<option value="" disabled selected>اختر التصنيف</option>';
       
-      // 2. إذا وجد بيانات في قاعدة البيانات، استخدمها
+      // إذا نجح الجلب من القاعدة
       if (categories && categories.length > 0) {
         categories.forEach(cat => {
           const option = new Option(cat.name, cat.name);
-          // إذا كان هذا هو تصنيف المنتج الحالي، قم بتحديده
-          if (selectedCategory && cat.name === selectedCategory) {
-            option.selected = true;
-          }
+          if (selectedCategory && cat.name === selectedCategory) option.selected = true;
           select.add(option);
         });
       } else {
-        // 3. 🆕 إذا كانت القاعدة فارغة، استخدم التصنيفات اليدوية (مثل كود الإضافة)
-        const manualCategories = ["ادوات منزليه", "أجهزة منزلية", "مستلزمات وعنايه شخصيه", "عطور", "إلكترونيات"];
-        
+        // 🆕 التصنيفات اليدوية (تظهر إذا كانت القاعدة فارغة)
+        const manualCategories = ["ادوات منزليه", "أجهزة منزلية", "مستلزمات وعنايه شخصيه", "عطور", "ساعات"];
         manualCategories.forEach(cat => {
           const option = new Option(cat, cat);
-          // تحديد التصنيف الحالي للمنتج إذا تطابق مع الأسماء اليدوية
-          if (selectedCategory && cat === selectedCategory) {
-            option.selected = true;
-          }
+          if (selectedCategory && cat === selectedCategory) option.selected = true;
           select.add(option);
         });
       }
     } catch(e) {
-      console.error('خطأ في تحميل التصنيفات:', e);
-      select.innerHTML = '<option value="" disabled selected>خطأ في التحميل</option>';
-      // إضافة خيار افتراضي في حالة الخطأ التام
-      const defaultOpt = new Option("عام", "عام");
-      if (selectedCategory === "عام") defaultOpt.selected = true;
-      select.add(defaultOpt);
+      console.error('Error categories:', e);
+      select.innerHTML = '<option value="عام">عام</option>';
     }
   }
-  // تحميل الفئات (مع التصنيفات اليدوية)
-  async function loadCategories(selectedCategory = null) {
-    const select = elements.categorySelect;
-    select.innerHTML = '<option value="" disabled selected>جاري تحميل التصنيفات...</option>';
-    
+
+  // 2. دالة جلب بيانات المنتج (تأكد أن هذا الجزء سليم)
+  async function fetchProductData() {
+    const params = new URLSearchParams(window.location.search);
+    currentProductId = params.get('id'); // يأخذ الـ id من الرابط
+
+    if (!currentProductId) {
+      showNotification("❌ لم يتم تحديد رقم المنتج", 'error');
+      return;
+    }
+
+    showLoading(`جاري تحميل المنتج ${currentProductId}...`);
+
     try {
-      // 1. محاولة جلب التصنيفات من قاعدة البيانات
-      const { data: categories, error } = await sb
-        .from(CATEGORIES_TABLE)
-        .select('name')
-        .order('name');
-      
-      select.innerHTML = '<option value="" disabled selected>اختر التصنيف</option>';
-      
-      // 2. إذا وجد بيانات في قاعدة البيانات، استخدمها
-      if (categories && categories.length > 0) {
-        categories.forEach(cat => {
-          const option = new Option(cat.name, cat.name);
-          // إذا كان هذا هو تصنيف المنتج الحالي، قم بتحديده
-          if (selectedCategory && cat.name === selectedCategory) {
-            option.selected = true;
-          }
-          select.add(option);
-        });
-      } else {
-        // 3. 🆕 إذا كانت القاعدة فارغة، استخدم التصنيفات اليدوية (مثل كود الإضافة)
-        const manualCategories = ["ادوات منزليه", "أجهزة منزلية", "مستلزمات وعنايه شخصيه", "عطور", "إلكترونيات"];
+      const { data: product, error } = await sb
+        .from(PRODUCTS_TABLE)
+        .select('*')
+        .eq('id', currentProductId)
+        .single();
         
-        manualCategories.forEach(cat => {
-          const option = new Option(cat, cat);
-          // تحديد التصنيف الحالي للمنتج إذا تطابق مع الأسماء اليدوية
-          if (selectedCategory && cat === selectedCategory) {
-            option.selected = true;
-          }
-          select.add(option);
-        });
-      }
-    } catch(e) {
-      console.error('خطأ في تحميل التصنيفات:', e);
-      select.innerHTML = '<option value="" disabled selected>خطأ في التحميل</option>';
-      // إضافة خيار افتراضي في حالة الخطأ التام
-      const defaultOpt = new Option("عام", "عام");
-      if (selectedCategory === "عام") defaultOpt.selected = true;
-      select.add(defaultOpt);
+      if (error || !product) throw new Error("المنتج غير موجود");
+
+      // تعبئة البيانات في الحقول
+      elements.nameInput.value = product.name;
+      elements.priceInput.value = product.price;
+      elements.descTextarea.value = product.description || '';
+      
+      // تحميل التصنيفات وتحديد تصنيف المنتج الحالي
+      await loadCategories(product.category);
+
+      // عرض الصور الموجودة
+      existingImageUrls = Array.isArray(product.image) ? product.image : [product.image];
+      updateImagesCounterAndPreview();
+      
+      hideLoading();
+    } catch (e) {
+      console.error(e);
+      hideLoading();
+      document.getElementById('productFormContent').style.display = 'none';
+      document.getElementById('productNotFound').style.display = 'block';
     }
   }
+
+  // 3. عند تشغيل الصفحة
+  document.addEventListener('DOMContentLoaded', () => {
+      fetchProductData();
+  });
+
 
 
   // دالة الرفع مع تنظيم التخزين (نسخة طبق الأصل)
