@@ -8,7 +8,6 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   
   <style>
-    /* ... ضع هنا كل أكواد الـ CSS من صفحة الإضافة الأصلية ... */
     :root { 
       --primary: #c6a047; 
       --primary-dark: #b18c34; 
@@ -100,19 +99,30 @@
     .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--success-color)); width: 0%; transition: width 0.3s ease; border-radius: 4px;}
     .max-images-note { font-size: 12px; color: #888; margin-top: 8px; text-align: center;}
 
-    /* 🆕 نمط الصورة الموجودة مسبقًا */
-    .image-container.is-uploaded img {
-        border-color: var(--success-color); /* إطار أخضر للصورة المرفوعة مسبقًا */
-        opacity: 0.8;
-    }
-    .image-container.is-deleted img {
+    /* نمط الصور المحذوفة */
+    .image-container.is-uploaded.is-deleted img {
         opacity: 0.5;
         border-color: var(--error-color);
         filter: grayscale(100%);
+        position: relative;
+    }
+    .image-container.is-uploaded.is-deleted::after {
+        content: "⚠️ محذوفة";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: rgba(220, 53, 69, 0.9);
+        color: white;
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-weight: bold;
+        font-size: 14px;
+        z-index: 5;
     }
     .remove-btn.undo {
-        background: rgba(23, 162, 184, 0.9); /* زر إلغاء الحذف أزرق */
-        right: 36px; /* تحريكه قليلاً */
+        background: rgba(23, 162, 184, 0.9);
+        right: 36px;
     }
     .remove-btn.undo:hover {
         background: #17a2b8;
@@ -267,22 +277,18 @@
   const CATEGORIES_TABLE = 'categories'; 
   const STORAGE_BUCKET = 'products'; 
   
-  // 🆕 متغير لتخزين معرف المنتج الحالي
+  // متغيرات التطبيق
   let currentProductId = null;
-  // 🆕 مصفوفة لتخزين الروابط الحالية للصور (التي تم رفعها مسبقاً)
   let existingImageUrls = [];
-  // 🆕 مصفوفة لتخزين الملفات الجديدة المختارة للرفع
   let newSelectedFiles = [];
-  // 🆕 مصفوفة لتخزين روابط الصور التي يجب حذفها من التخزين
   let imagesToDelete = [];
-  
   const MAX_IMAGES = 10;
   
   // عناصر DOM
   const elements = {
-    productIdDisplay: document.getElementById("productIdDisplay"), // 🆕
-    productFormContent: document.getElementById("productFormContent"), // 🆕
-    productNotFound: document.getElementById("productNotFound"), // 🆕
+    productIdDisplay: document.getElementById("productIdDisplay"),
+    productFormContent: document.getElementById("productFormContent"),
+    productNotFound: document.getElementById("productNotFound"),
     nameInput: document.getElementById("name"),
     priceInput: document.getElementById("price"),
     categorySelect: document.getElementById("categorySelect"),
@@ -311,9 +317,8 @@
   // ================ دوال عامة ومساعدة ================
   // ===========================================
   
-  // دالة ضغط الصور وتحويلها إلى WebP (نسخة طبق الأصل)
+  // دالة ضغط الصور وتحويلها إلى WebP
   async function compressImage(file) {
-    // ... (كود دالة compressImage من الصفحة الأصلية) ...
     return new Promise((resolve) => {
       if (file.size < 300 * 1024 && file.type.includes('webp')) {
         resolve(file);
@@ -376,7 +381,7 @@
     });
   }
 
-  // دالة مساعدة لتحويل البايتات إلى وحدات مقروءة (نسخة طبق الأصل)
+  // دالة مساعدة لتحويل البايتات إلى وحدات مقروءة
   function formatBytes(bytes, decimals = 2) {
     if (bytes === 0) return '0 Bytes';
     const k = 1024;
@@ -386,7 +391,7 @@
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
   }
 
-  // دالة لعرض الإشعارات (نسخة طبق الأصل)
+  // دالة لعرض الإشعارات
   function showNotification(message, type = 'success') {
     elements.notification.textContent = message;
     elements.notification.className = `notification ${type}`;
@@ -394,7 +399,7 @@
     setTimeout(() => { elements.notification.style.display = 'none'; }, 4000);
   }
 
-  // دالة لعرض/إخفاء التحميل (نسخة طبق الأصل)
+  // دالة لعرض/إخفاء التحميل
   function showLoading(text = "جاري معالجة الطلب...") {
     elements.loadingText.textContent = text;
     elements.loadingOverlay.style.display = 'flex';
@@ -404,7 +409,7 @@
     elements.loadingOverlay.style.display = 'none';
   }
 
-  // تحديث شريط التقدم (نسخة طبق الأصل)
+  // تحديث شريط التقدم
   function updateProgress(current, total, status) {
     const percent = Math.round((current / total) * 100);
     elements.progressStatus.textContent = status;
@@ -413,7 +418,48 @@
     elements.uploadProgress.style.display = 'block';
   }
 
-  // التحقق من صحة الحقول (نسخة طبق الأصل)
+  // تحميل الفئات (مع التصنيفات اليدوية المطابقة لصفحة الإضافة)
+  async function loadCategories(selectedCategory = null) {
+    const select = elements.categorySelect;
+    select.innerHTML = '<option value="" disabled selected>جاري تحميل التصنيفات...</option>';
+    
+    try {
+      // محاولة جلب البيانات من Supabase أولاً
+      const { data: categories } = await sb
+        .from(CATEGORIES_TABLE)
+        .select('name')
+        .order('name');
+      
+      select.innerHTML = '<option value="" disabled selected>اختر التصنيف</option>';
+      
+      // المصفوفة اليدوية (نفس الموجودة في صفحة الإضافة لضمان التطابق)
+      const manualCategories = ["ادوات منزليه", "أجهزة منزلية", "مستلزمات وعنايه شخصيه"];
+      
+      // تحديد المصدر (إما من القاعدة أو يدوي إذا كانت القاعدة فارغة)
+      const dataSource = (categories && categories.length > 0) 
+                         ? categories.map(c => c.name) 
+                         : manualCategories;
+
+      dataSource.forEach(catName => {
+        const option = new Option(catName, catName);
+        // التحقق مما إذا كان هذا هو تصنيف المنتج الحالي لتحديده تلقائياً
+        if (selectedCategory && catName === selectedCategory) {
+          option.selected = true;
+        }
+        select.add(option);
+      });
+
+    } catch(e) {
+      console.error('خطأ في تحميل التصنيفات:', e);
+      select.innerHTML = '<option value="" disabled selected>خطأ في التحميل</option>';
+      // إضافة خيار احتياطي في حالة الفشل التام
+      const fallbackOpt = new Option("عام", "عام");
+      if (selectedCategory === "عام") fallbackOpt.selected = true;
+      select.add(fallbackOpt);
+    }
+  }
+
+  // التحقق من صحة الحقول
   function validateForm() {
     let isValid = true;
     
@@ -448,8 +494,10 @@
       elements.errorMessages.category.style.display = 'none';
     }
     
-    // الصور - يجب أن يكون مجموع الصور >= 1
-    if (existingImageUrls.length + newSelectedFiles.length - imagesToDelete.length === 0) {
+    // التحقق من الصور: (الصور الموجودة - الصور المختارة للحذف + الصور الجديدة)
+    const currentImagesCount = existingImageUrls.length - imagesToDelete.length + newSelectedFiles.length;
+    
+    if (currentImagesCount === 0) {
       elements.uploadArea.classList.add('error');
       elements.errorMessages.image.style.display = 'block';
       isValid = false;
@@ -461,93 +509,7 @@
     return isValid;
   }
 
-// --- استبدل دالة fetchProductData و loadCategories بهذا الكود المترابط ---
-
-  // 1. دالة تحميل التصنيفات (اليدوية + القاعدة)
-  async function loadCategories(selectedCategory = null) {
-    const select = elements.categorySelect;
-    select.innerHTML = '<option value="" disabled selected>جاري تحميل التصنيفات...</option>';
-    
-    try {
-      const { data: categories, error } = await sb
-        .from(CATEGORIES_TABLE)
-        .select('name')
-        .order('name');
-      
-      select.innerHTML = '<option value="" disabled selected>اختر التصنيف</option>';
-      
-      // إذا نجح الجلب من القاعدة
-      if (categories && categories.length > 0) {
-        categories.forEach(cat => {
-          const option = new Option(cat.name, cat.name);
-          if (selectedCategory && cat.name === selectedCategory) option.selected = true;
-          select.add(option);
-        });
-      } else {
-        // 🆕 التصنيفات اليدوية (تظهر إذا كانت القاعدة فارغة)
-        const manualCategories = ["ادوات منزليه", "أجهزة منزلية", "مستلزمات وعنايه شخصيه", "عطور", "ساعات"];
-        manualCategories.forEach(cat => {
-          const option = new Option(cat, cat);
-          if (selectedCategory && cat === selectedCategory) option.selected = true;
-          select.add(option);
-        });
-      }
-    } catch(e) {
-      console.error('Error categories:', e);
-      select.innerHTML = '<option value="عام">عام</option>';
-    }
-  }
-
-  // 2. دالة جلب بيانات المنتج (تأكد أن هذا الجزء سليم)
-  async function fetchProductData() {
-    const params = new URLSearchParams(window.location.search);
-    currentProductId = params.get('id'); // يأخذ الـ id من الرابط
-
-    if (!currentProductId) {
-      showNotification("❌ لم يتم تحديد رقم المنتج", 'error');
-      return;
-    }
-
-    showLoading(`جاري تحميل المنتج ${currentProductId}...`);
-
-    try {
-      const { data: product, error } = await sb
-        .from(PRODUCTS_TABLE)
-        .select('*')
-        .eq('id', currentProductId)
-        .single();
-        
-      if (error || !product) throw new Error("المنتج غير موجود");
-
-      // تعبئة البيانات في الحقول
-      elements.nameInput.value = product.name;
-      elements.priceInput.value = product.price;
-      elements.descTextarea.value = product.description || '';
-      
-      // تحميل التصنيفات وتحديد تصنيف المنتج الحالي
-      await loadCategories(product.category);
-
-      // عرض الصور الموجودة
-      existingImageUrls = Array.isArray(product.image) ? product.image : [product.image];
-      updateImagesCounterAndPreview();
-      
-      hideLoading();
-    } catch (e) {
-      console.error(e);
-      hideLoading();
-      document.getElementById('productFormContent').style.display = 'none';
-      document.getElementById('productNotFound').style.display = 'block';
-    }
-  }
-
-  // 3. عند تشغيل الصفحة
-  document.addEventListener('DOMContentLoaded', () => {
-      fetchProductData();
-  });
-
-
-
-  // دالة الرفع مع تنظيم التخزين (نسخة طبق الأصل)
+  // دالة الرفع مع تنظيم التخزين
   async function uploadImage(file, index, total) {
     try {
       updateProgress(index, total, `جاري رفع الصورة ${index}/${total}...`);
@@ -634,7 +596,9 @@
 
   // تحديث عداد الصور والمعاينة
   function updateImagesCounterAndPreview() {
-    const totalCurrentImages = existingImageUrls.length + newSelectedFiles.length - imagesToDelete.length;
+    // 🔥 استخدم الصيغة المعدلة: (الموجودة - المحذوفة + الجديدة)
+    const totalCurrentImages = existingImageUrls.length - imagesToDelete.length + newSelectedFiles.length;
+    
     elements.imagesCount.textContent = `${totalCurrentImages}/${MAX_IMAGES}`;
     
     if (totalCurrentImages >= MAX_IMAGES) {
@@ -650,9 +614,9 @@
       elements.uploadArea.classList.add('has-file');
       elements.uploadArea.innerHTML = `
         <span class="upload-icon"><i class="fas fa-check-circle"></i></span>
-        <span>تم اختيار ${newSelectedFiles.length} صورة جديدة. (${existingImageUrls.length - imagesToDelete.length} صورة موجودة)</span>
+        <span>${newSelectedFiles.length} صورة جديدة، ${existingImageUrls.length - imagesToDelete.length} صورة موجودة</span>
         <div style="font-size: 13px; margin-top: 8px; color: #28a745;">
-          ${totalCurrentImages} صور إجمالاً جاهزة للحفظ
+          ${totalCurrentImages} صورة إجمالاً جاهزة للحفظ
         </div>
       `;
     } else {
@@ -713,7 +677,7 @@
           imgContainer.appendChild(undoBtn);
       }
       
-      // زر الحذف/إلغاء الحذف (يعمل كزر حذف للصورة الموجودة)
+      // زر الحذف/إلغاء الحذف
       const removeBtn = document.createElement("button");
       removeBtn.className = "remove-btn";
       removeBtn.innerHTML = isDeleted ? '<i class="fas fa-times"></i>' : '<i class="fas fa-trash-alt"></i>';
@@ -721,7 +685,7 @@
       
       removeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        toggleImageDeletion(url, isDeleted ? 'remove' : 'delete'); // 'remove' للإزالة النهائية من القائمة
+        toggleImageDeletion(url, isDeleted ? 'remove' : 'delete');
       });
       
       imgContainer.appendChild(removeBtn);
@@ -782,18 +746,16 @@
             showNotification(`✅ تم إلغاء علامة الحذف عن الصورة.`, 'success');
         }
     } else if (action === 'remove') {
-        // الإزالة النهائية من قائمة الموجودة قبل الحفظ (للتجنب مشاكل)
+        // الإزالة النهائية من قائمة الموجودة قبل الحفظ
         const existingIndex = existingImageUrls.indexOf(url);
         if (existingIndex > -1) {
-             // إزالة الرابط من القائمة الحالية (لأنه قد تم حذفه عن طريق الخطأ)
              existingImageUrls.splice(existingIndex, 1);
-             // التأكد من إضافتها لقائمة الحذف إذا لم تكن موجودة بالفعل
              if (index === -1) {
                 imagesToDelete.push(url);
              }
              showNotification(`تمت إزالة الصورة من القائمة الحالية وإضافتها للحذف من التخزين.`, 'info');
         } else if (index > -1) {
-             imagesToDelete.splice(index, 1); // إزالتها من قائمة الحذف إذا كانت موجودة
+             imagesToDelete.splice(index, 1);
              showNotification(`تم إزالة الصورة المحذوفة مسبقاً.`, 'info');
         }
     }
@@ -809,7 +771,7 @@
   }
 
   // ===========================================
-  // ================ دوال الجلب والحفظ (المعدلة) ================
+  // ================ دوال الجلب والحفظ ================
   // ===========================================
 
   // دالة جلب بيانات المنتج
@@ -962,7 +924,7 @@
         price: Number(price), 
         description: description, 
         category: category, 
-        image: finalImageUrls // قائمة الروابط الجديدة والقديمة المتبقية
+        image: finalImageUrls
       };
       
       const { error } = await sb
@@ -973,7 +935,7 @@
 
       if (error) throw error;
       
-      // رسالة نجاح مع معلومات التوفير (إذا تم رفع صور جديدة)
+      // رسالة نجاح مع معلومات التوفير
       let compressionInfo = "";
       if (totalOriginalSize > 0) {
         const savedPercent = Math.round((1 - (totalCompressedSize / totalOriginalSize)) * 100);
@@ -985,7 +947,7 @@
       // إعادة تعيين المصفوفات وتحديث واجهة المستخدم
       newSelectedFiles = [];
       imagesToDelete = [];
-      existingImageUrls = finalImageUrls; // تحديث القائمة الموجودة بالصورة النهائية
+      existingImageUrls = finalImageUrls;
       updateImagesCounterAndPreview();
       
       // إعادة الزر لوضعه الأصلي
@@ -1014,6 +976,10 @@
       elements.uploadProgress.style.display = 'none';
     }
   }
+
+  // ===========================================
+  // ================ تهيئة الأحداث ================
+  // ===========================================
 
   // معاينة الصور الجديدة
   document.getElementById("imageInput").addEventListener("change", function () {
@@ -1053,4 +1019,4 @@
 
 </script>
 </body>
-</html>
+  </html>
