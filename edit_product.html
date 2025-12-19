@@ -461,42 +461,99 @@
     return isValid;
   }
 
-  // تحميل الفئات (نسخة طبق الأصل)
+  // تحميل الفئات (مع التصنيفات اليدوية)
   async function loadCategories(selectedCategory = null) {
     const select = elements.categorySelect;
     select.innerHTML = '<option value="" disabled selected>جاري تحميل التصنيفات...</option>';
     
     try {
-      const { data: categories } = await sb
+      // 1. محاولة جلب التصنيفات من قاعدة البيانات
+      const { data: categories, error } = await sb
         .from(CATEGORIES_TABLE)
         .select('name')
         .order('name');
       
       select.innerHTML = '<option value="" disabled selected>اختر التصنيف</option>';
       
+      // 2. إذا وجد بيانات في قاعدة البيانات، استخدمها
       if (categories && categories.length > 0) {
         categories.forEach(cat => {
           const option = new Option(cat.name, cat.name);
+          // إذا كان هذا هو تصنيف المنتج الحالي، قم بتحديده
           if (selectedCategory && cat.name === selectedCategory) {
             option.selected = true;
           }
           select.add(option);
         });
       } else {
-        ["عام", "ملابس", "إلكترونيات", "أجهزة منزلية", "إكسسوارات", "أثاث", "مواد غذائية"].forEach(cat => {
-            const option = new Option(cat, cat);
-            if (selectedCategory && cat === selectedCategory) {
-                option.selected = true;
-            }
-            select.add(option);
+        // 3. 🆕 إذا كانت القاعدة فارغة، استخدم التصنيفات اليدوية (مثل كود الإضافة)
+        const manualCategories = ["ادوات منزليه", "أجهزة منزلية", "مستلزمات وعنايه شخصيه", "عطور", "إلكترونيات"];
+        
+        manualCategories.forEach(cat => {
+          const option = new Option(cat, cat);
+          // تحديد التصنيف الحالي للمنتج إذا تطابق مع الأسماء اليدوية
+          if (selectedCategory && cat === selectedCategory) {
+            option.selected = true;
+          }
+          select.add(option);
         });
       }
     } catch(e) {
       console.error('خطأ في تحميل التصنيفات:', e);
       select.innerHTML = '<option value="" disabled selected>خطأ في التحميل</option>';
-      select.add(new Option("عام", "عام"));
+      // إضافة خيار افتراضي في حالة الخطأ التام
+      const defaultOpt = new Option("عام", "عام");
+      if (selectedCategory === "عام") defaultOpt.selected = true;
+      select.add(defaultOpt);
     }
   }
+  // تحميل الفئات (مع التصنيفات اليدوية)
+  async function loadCategories(selectedCategory = null) {
+    const select = elements.categorySelect;
+    select.innerHTML = '<option value="" disabled selected>جاري تحميل التصنيفات...</option>';
+    
+    try {
+      // 1. محاولة جلب التصنيفات من قاعدة البيانات
+      const { data: categories, error } = await sb
+        .from(CATEGORIES_TABLE)
+        .select('name')
+        .order('name');
+      
+      select.innerHTML = '<option value="" disabled selected>اختر التصنيف</option>';
+      
+      // 2. إذا وجد بيانات في قاعدة البيانات، استخدمها
+      if (categories && categories.length > 0) {
+        categories.forEach(cat => {
+          const option = new Option(cat.name, cat.name);
+          // إذا كان هذا هو تصنيف المنتج الحالي، قم بتحديده
+          if (selectedCategory && cat.name === selectedCategory) {
+            option.selected = true;
+          }
+          select.add(option);
+        });
+      } else {
+        // 3. 🆕 إذا كانت القاعدة فارغة، استخدم التصنيفات اليدوية (مثل كود الإضافة)
+        const manualCategories = ["ادوات منزليه", "أجهزة منزلية", "مستلزمات وعنايه شخصيه", "عطور", "إلكترونيات"];
+        
+        manualCategories.forEach(cat => {
+          const option = new Option(cat, cat);
+          // تحديد التصنيف الحالي للمنتج إذا تطابق مع الأسماء اليدوية
+          if (selectedCategory && cat === selectedCategory) {
+            option.selected = true;
+          }
+          select.add(option);
+        });
+      }
+    } catch(e) {
+      console.error('خطأ في تحميل التصنيفات:', e);
+      select.innerHTML = '<option value="" disabled selected>خطأ في التحميل</option>';
+      // إضافة خيار افتراضي في حالة الخطأ التام
+      const defaultOpt = new Option("عام", "عام");
+      if (selectedCategory === "عام") defaultOpt.selected = true;
+      select.add(defaultOpt);
+    }
+  }
+
 
   // دالة الرفع مع تنظيم التخزين (نسخة طبق الأصل)
   async function uploadImage(file, index, total) {
