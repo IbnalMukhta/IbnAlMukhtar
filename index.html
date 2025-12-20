@@ -2123,44 +2123,41 @@
 // 1. دالة لتحميل الإعدادات والأكواد من لوحة التحكم
 function loadGradualDiscountSettings() {
     try {
-        // جلب حالة النظام (مفعل/معطل)
         const isActive = localStorage.getItem('gradualDiscountActive') === 'true';
-        
-        // جلب بيانات الشرائح والإعدادات من المفتاح المستخدم في لوحة التحكم
         const savedSettingsRaw = localStorage.getItem('gradualDiscountSettings');
         
         if (savedSettingsRaw) {
             const parsedData = JSON.parse(savedSettingsRaw);
-            
-            // لوحة التحكم تحفظ البيانات داخل كائن gradualDiscount أو مصفوفة segments مباشرة
             window.gradualDiscount = {
                 segments: parsedData.segments || (parsedData.gradualDiscount && parsedData.gradualDiscount.segments) || [],
                 isActive: isActive,
-                // مزامنة رسالة التنبيه إذا وجدت
                 alertMessage: parsedData.settings ? parsedData.settings.alertMessage : 'كلما زادت مشترياتك، زاد خصمك!'
             };
             console.log("✅ تم مزامنة إعدادات الخصم من لوحة التحكم");
         } else {
-            // حالة احتياطية في حال عدم وجود بيانات في لوحة التحكم
-            window.gradualDiscount = { segments: [], isActive: false };
+            // 🔥 القيم اليدوية الجديدة التي طلبتها (تظهر للجميع تلقائياً)
+            window.gradualDiscount = {
+                segments: [
+                    { min: 10000, max: 15000, discount: 5, description: "خصم 5%" },
+                    { min: 15001, max: 25000, discount: 10, description: "خصم 10%" },
+                    { min: 25001, max: 100000, discount: 12, description: "خصم 12%" }
+                ],
+                isActive: true // جعل النظام مفعل تلقائياً للجميع
+            };
         }
 
-        // 2. مزامنة أكواد الخصم (Coupons) أيضاً
         const savedCodes = localStorage.getItem('discountCodes');
         if (savedCodes) {
-            // تحديث كائن الأكواد العالمي في الصفحة الرئيسية
             discountCodes = JSON.parse(savedCodes);
-            console.log("✅ تم مزامنة أكواد الخصم من لوحة التحكم");
         }
 
     } catch (e) {
-        console.error('❌ فشل في مزامنة البيانات من لوحة التحكم:', e);
+        console.error('❌ فشل في مزامنة البيانات:', e);
     }
 }
 
-// 2. دالة حساب الخصم التدريجي بناءً على القيمة المخزنة
+// 2. دالة حساب الخصم التدريجي
 function calculateGradualDiscount(subtotal) {
-    // التأكد من أن النظام مفعل ومن وجود شرائح
     if (!window.gradualDiscount || !window.gradualDiscount.isActive || !window.gradualDiscount.segments) {
         return 0;
     }
@@ -2168,7 +2165,6 @@ function calculateGradualDiscount(subtotal) {
     const segments = window.gradualDiscount.segments;
     let discountPercent = 0;
 
-    // البحث في الشرائح (نستخدم ترتيب تصاعدي أو تنازلي لضمان أدق نتيجة)
     segments.forEach(segment => {
         const min = parseFloat(segment.min);
         const max = (segment.max === null || segment.max === Infinity || segment.max === "") ? Infinity : parseFloat(segment.max);
@@ -2181,37 +2177,34 @@ function calculateGradualDiscount(subtotal) {
     return discountPercent;
 }
 
-// 3. دالة عرض الإشعار (تحسين لمنع التكرار المزعج)
+// 3. دالة عرض الإشعار
 function showGradualDiscountNotification(discountPercentage) {
     if (discountPercentage <= 0) return;
 
     const now = Date.now();
-    // تقليل مدة التكرار إلى 5 ثواني لتجربة مستخدم أفضل
     if (window.lastDiscountNotificationTime && (now - window.lastDiscountNotificationTime < 5000)) {
         return;
     }
     
     window.lastDiscountNotificationTime = now;
     
-    // إزالة أي إشعار قديم قبل إظهار الجديد
     const oldNote = document.querySelector('.discount-notification');
     if (oldNote) oldNote.remove();
 
     const notification = document.createElement('div');
     notification.className = 'discount-notification';
-    // استخدام رسالة التنبيه المخصصة من لوحة التحكم إن وجدت
-    const msg = window.gradualDiscount.alertMessage || "مبروك! حصلت على خصم إضافي";
     
+    // جلب الرسالة المخصصة أو رسالة افتراضية
+    const msg = (window.gradualDiscount && window.gradualDiscount.alertMessage) || 'مبروك! لقد حصلت على خصم تدريجي';
+
     notification.innerHTML = `
         🎉 ${msg} بنسبة ${discountPercentage}%!
     `;
     document.body.appendChild(notification);
     
-    // إزالة تلقائية بعد 3 ثواني
     setTimeout(() => {
         if (notification.parentNode) {
-            notification.classList.add('fade-out'); // إضافة تأثير اختفاء إذا كان مدعوماً في CSS
-            setTimeout(() => notification.remove(), 500);
+            notification.remove();
         }
     }, 3000);
 }
