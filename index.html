@@ -2118,104 +2118,103 @@
             cartBadge.textContent = total > 99 ? '99+' : total;
         }
 
-        /* ====================== نظام الخصم التدريجي ====================== */
-        // دالة لتحميل إعدادات الخصم التدريجي
-        function loadGradualDiscountSettings() {
-            try {
-                const savedSettings = localStorage.getItem('gradualDiscountSettings');
-                const isActive = localStorage.getItem('gradualDiscountActive') === 'true';
-                
-                if (savedSettings && isActive) {
-                    const settings = JSON.parse(savedSettings);
-                    window.gradualDiscount = {
-                        segments: settings.segments || [],
-                        isActive: settings.isActive || false
-                    };
-                } else {
-                    // إعدادات افتراضية للخصم التدريجي
-                    window.gradualDiscount = {
-                        segments: [
-                            { min: 0, max: 50000, discount: 0 },
-                            { min: 50001, max: 100000, discount: 5 },
-                            { min: 100001, max: 200000, discount: 10 },
-                            { min: 200001, max: 300000, discount: 15 },
-                            { min: 300001, max: 400000, discount: 20 },
-                            { min: 400001, max: 500000, discount: 25 },
-                            { min: 500001, max: 1000000000, discount: 30 }
-                        ],
-                        isActive: true
-                    };
-                }
-            } catch (e) {
-                console.error('خطأ في تحميل إعدادات الخصم التدريجي:', e);
-                window.gradualDiscount = {
-                    segments: [
-                        { min: 0, max: 50000, discount: 0 },
-                        { min: 50001, max: 100000, discount: 5 },
-                        { min: 100001, max: 200000, discount: 10 },
-                        { min: 200001, max: 300000, discount: 15 },
-                        { min: 300001, max: 400000, discount: 20 },
-                        { min: 400001, max: 500000, discount: 25 },
-                        { min: 500001, max: 1000000000, discount: 30 }
-                    ],
-                    isActive: true
-                };
-            }
+   /* ====================== نظام الخصم التدريجي (المزامن) ====================== */
+
+// 1. دالة لتحميل الإعدادات والأكواد من لوحة التحكم
+function loadGradualDiscountSettings() {
+    try {
+        // جلب حالة النظام (مفعل/معطل)
+        const isActive = localStorage.getItem('gradualDiscountActive') === 'true';
+        
+        // جلب بيانات الشرائح والإعدادات من المفتاح المستخدم في لوحة التحكم
+        const savedSettingsRaw = localStorage.getItem('gradualDiscountSettings');
+        
+        if (savedSettingsRaw) {
+            const parsedData = JSON.parse(savedSettingsRaw);
+            
+            // لوحة التحكم تحفظ البيانات داخل كائن gradualDiscount أو مصفوفة segments مباشرة
+            window.gradualDiscount = {
+                segments: parsedData.segments || (parsedData.gradualDiscount && parsedData.gradualDiscount.segments) || [],
+                isActive: isActive,
+                // مزامنة رسالة التنبيه إذا وجدت
+                alertMessage: parsedData.settings ? parsedData.settings.alertMessage : 'كلما زادت مشترياتك، زاد خصمك!'
+            };
+            console.log("✅ تم مزامنة إعدادات الخصم من لوحة التحكم");
+        } else {
+            // حالة احتياطية في حال عدم وجود بيانات في لوحة التحكم
+            window.gradualDiscount = { segments: [], isActive: false };
         }
 
-        // دالة حساب الخصم التدريجي
-        function calculateGradualDiscount(subtotal) {
-            if (!window.gradualDiscount || !window.gradualDiscount.isActive) {
-                return 0;
-            }
-            
-            const segments = window.gradualDiscount.segments;
-            
-            // إذا كانت الشرائح غير محددة
-            if (!segments || segments.length === 0) {
-                return 0;
-            }
-            
-            // البحث عن الشريحة المناسبة
-            for (let i = segments.length - 1; i >= 0; i--) {
-                const segment = segments[i];
-                if (subtotal >= segment.min && subtotal <= segment.max) {
-                    return segment.discount;
-                }
-            }
-            
-            // إذا كانت القيمة أكبر من كل الشرائح، استخدم آخر خصم
-            if (subtotal > segments[segments.length - 1].max) {
-                return segments[segments.length - 1].discount;
-            }
-            
-            return 0;
+        // 2. مزامنة أكواد الخصم (Coupons) أيضاً
+        const savedCodes = localStorage.getItem('discountCodes');
+        if (savedCodes) {
+            // تحديث كائن الأكواد العالمي في الصفحة الرئيسية
+            discountCodes = JSON.parse(savedCodes);
+            console.log("✅ تم مزامنة أكواد الخصم من لوحة التحكم");
         }
 
-        // دالة لعرض إشعار الخصم التدريجي
-        function showGradualDiscountNotification(discountPercentage) {
-            // تجنب الإشعارات المتكررة خلال 10 ثواني
-            const now = Date.now();
-            if (now - lastDiscountNotificationTime < 10000) {
-                return;
-            }
-            
-            lastDiscountNotificationTime = now;
-            
-            const notification = document.createElement('div');
-            notification.className = 'discount-notification';
-            notification.innerHTML = `
-                🎉 مبروك! لقد حصلت على خصم تدريجي بنسبة ${discountPercentage}%!
-            `;
-            document.body.appendChild(notification);
-            
-            // إزالة الإشعار بعد 3 ثواني
-            setTimeout(() => {
-                if (notification.parentNode) {
-                    notification.parentNode.removeChild(notification);
-                }
-            }, 3000);
+    } catch (e) {
+        console.error('❌ فشل في مزامنة البيانات من لوحة التحكم:', e);
+    }
+}
+
+// 2. دالة حساب الخصم التدريجي بناءً على القيمة المخزنة
+function calculateGradualDiscount(subtotal) {
+    // التأكد من أن النظام مفعل ومن وجود شرائح
+    if (!window.gradualDiscount || !window.gradualDiscount.isActive || !window.gradualDiscount.segments) {
+        return 0;
+    }
+    
+    const segments = window.gradualDiscount.segments;
+    let discountPercent = 0;
+
+    // البحث في الشرائح (نستخدم ترتيب تصاعدي أو تنازلي لضمان أدق نتيجة)
+    segments.forEach(segment => {
+        const min = parseFloat(segment.min);
+        const max = (segment.max === null || segment.max === Infinity || segment.max === "") ? Infinity : parseFloat(segment.max);
+        
+        if (subtotal >= min && subtotal <= max) {
+            discountPercent = parseFloat(segment.discount);
         }
+    });
+    
+    return discountPercent;
+}
+
+// 3. دالة عرض الإشعار (تحسين لمنع التكرار المزعج)
+function showGradualDiscountNotification(discountPercentage) {
+    if (discountPercentage <= 0) return;
+
+    const now = Date.now();
+    // تقليل مدة التكرار إلى 5 ثواني لتجربة مستخدم أفضل
+    if (window.lastDiscountNotificationTime && (now - window.lastDiscountNotificationTime < 5000)) {
+        return;
+    }
+    
+    window.lastDiscountNotificationTime = now;
+    
+    // إزالة أي إشعار قديم قبل إظهار الجديد
+    const oldNote = document.querySelector('.discount-notification');
+    if (oldNote) oldNote.remove();
+
+    const notification = document.createElement('div');
+    notification.className = 'discount-notification';
+    // استخدام رسالة التنبيه المخصصة من لوحة التحكم إن وجدت
+    const msg = window.gradualDiscount.alertMessage || "مبروك! حصلت على خصم إضافي";
+    
+    notification.innerHTML = `
+        🎉 ${msg} بنسبة ${discountPercentage}%!
+    `;
+    document.body.appendChild(notification);
+    
+    // إزالة تلقائية بعد 3 ثواني
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.classList.add('fade-out'); // إضافة تأثير اختفاء إذا كان مدعوماً في CSS
+            setTimeout(() => notification.remove(), 500);
+        }
+    }, 3000);
+}
 
         /* ====================== نظام كود الخصم ====================== */
         // دالة تطبيق كود الخصم
@@ -3167,4 +3166,3 @@ trackVisit();
  
 </body>
 </html>
-
