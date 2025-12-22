@@ -138,9 +138,8 @@
 </div>
 
 <script>
-        // البحث عن هذه الأسطر في الكود واستبدالها بالبيانات الجديدة:
-const SUPABASE_URL = 'https://mpcuradmirhcfmwvsylt.supabase.co';
-const SUPABASE_ANON_KEY = 'sb_publishable_MJRUl3ON-d61CnFsJ-pFJA_Nbbpg_gZ.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVramd6Ymd6em1scHJuaGx3Z3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NTM4NzAsImV4cCI6MjA4MTIyOTg3MH0.A-xvwqyDxwxDTeiB8nBgOwrJTPLWenYlO99nxbgobTw';
+    const SUPABASE_URL = 'https://mpcuradmirhcfmwvsylt.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_MJRUl3ON-d61CnFsJ-pFJA_Nbbpg_gZ';
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const urlParams = new URLSearchParams(window.location.search);
@@ -184,33 +183,41 @@ const SUPABASE_ANON_KEY = 'sb_publishable_MJRUl3ON-d61CnFsJ-pFJA_Nbbpg_gZ.eyJpc3
         }
     }
 
-    // تحديث واجهة السعرين
+    // تحديث واجهة السعرين بالأرقام الإنجليزية
     function updatePricesUI(yerPrice) {
         const yer = Number(yerPrice);
-        const sar = Math.ceil(yer / SAR_RATE); // تقريب السعر السعودي للأعلى
+        const sar = Math.ceil(yer / SAR_RATE); 
 
-        document.getElementById('priceYER').innerText = yer.toLocaleString();
-        document.getElementById('priceSAR').innerText = sar.toLocaleString();
+        // استخدام 'en-US' لضمان ظهور الأرقام بالشكل الإنجليزي 123456
+        document.getElementById('priceYER').innerText = yer.toLocaleString('en-US');
+        document.getElementById('priceSAR').innerText = sar.toLocaleString('en-US');
     }
 
-    function changeMainImg(el, src) {
-        document.getElementById('mainImg').src = src;
-        document.querySelectorAll('.thumb-item').forEach(t => t.classList.remove('active'));
-        el.classList.add('active');
-    }
+    // تعديل عرض المقاسات أيضاً لتظهر بالإنجليزية
+    function renderProduct() {
+        document.getElementById('title').innerText = productData.name;
+        document.getElementById('description').innerText = productData.description || "";
+        updatePricesUI(productData.price);
 
-    function selectSize(idx, sizeObj) {
-        selectedSize = sizeObj;
-        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(`s-${idx}`).classList.add('active');
-        updatePricesUI(sizeObj.price);
-    }
+        const imgs = Array.isArray(productData.image) ? productData.image : [productData.image];
+        document.getElementById('mainImg').src = imgs[0];
+        document.getElementById('thumbGrid').innerHTML = imgs.map((img, i) => `
+            <div class="thumb-item ${i === 0 ? 'active' : ''}" onclick="changeMainImg(this, '${img}')">
+                <img src="${img}">
+            </div>
+        `).join('');
 
-    function shareProduct() {
-        if (navigator.share) {
-            navigator.share({ title: productData.name, url: window.location.href });
-        } else {
-            alert('تم نسخ الرابط!');
+        let sizes = [];
+        try { sizes = typeof productData.sizes === 'string' ? JSON.parse(productData.sizes) : productData.sizes; } catch(e) {}
+        if (sizes && sizes.length > 0) {
+            document.getElementById('sizesSection').style.display = 'block';
+            document.getElementById('sizesList').innerHTML = sizes.map((s, i) => `
+                <div class="size-btn" id="s-${i}" onclick="selectSize(${i}, ${JSON.stringify(s).replace(/"/g, '&quot;')})">
+                    <strong>${s.name}</strong><br>
+                    <small>${Number(s.price).toLocaleString('en-US')} ريال</small>
+                </div>
+            `).join('');
+            selectSize(0, sizes[0]);
         }
     }
 
@@ -241,3 +248,4 @@ const SUPABASE_ANON_KEY = 'sb_publishable_MJRUl3ON-d61CnFsJ-pFJA_Nbbpg_gZ.eyJpc3
 </script>
 </body>
 </html>
+ 
