@@ -2,380 +2,102 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم ابن المختار الذكية - التحليلات</title>
-    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+    <title>عداد ابن المختار الاقتصادي</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@900&display=swap" rel="stylesheet">
     <style>
-        :root {
-            --main-color: #001F3F;
-            --secondary-color: #FF8C00;
-            --bg-color: #001226;
-            --card-bg: rgba(255, 255, 255, 0.08);
-            --text-color: #fff;
-            --danger: #ff4d4d;
-            --success: #2ecc71;
-            --info: #3498db;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         body {
+            background-color: #010409;
+            color: white;
             font-family: 'Tajawal', sans-serif;
-            background: var(--bg-color);
-            color: var(--text-color);
-            min-height: 100vh;
-            padding: 20px;
-            overflow-x: hidden;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
         }
-
-        /* نظام الحماية - واجهة الدخول */
-        #auth-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: var(--bg-color); z-index: 9999;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        .container {
+            display: flex;
+            gap: 40px;
+            flex-wrap: wrap;
+            justify-content: center;
         }
-        .auth-box {
-            background: var(--card-bg); padding: 40px; border-radius: 20px;
-            text-align: center; border: 1px solid var(--secondary-color);
-            box-shadow: 0 0 20px rgba(255, 140, 0, 0.2);
+        .stat-box {
+            background: #0d1117;
+            padding: 50px;
+            border-radius: 40px;
+            border: 2px solid #30363d;
+            text-align: center;
+            min-width: 300px;
         }
-        .auth-box input {
-            padding: 12px; border-radius: 8px; border: none; margin: 15px 0;
-            width: 100%; text-align: center; font-size: 18px;
+        .label {
+            font-size: 1.5rem;
+            color: #8b949e;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
-
-        .container { max-width: 1400px; margin: 0 auto; display: none; }
-
-        /* Header */
-        .dashboard-header {
-            background: linear-gradient(135deg, var(--main-color) 0%, #002b5c 100%);
-            border-radius: 20px; padding: 30px; margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+        .number {
+            font-size: 7rem; /* رقم ضخم */
+            font-weight: 900;
+            margin: 0;
+            color: #FF8C00;
         }
-
-        .header-top { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
-        .header-title h1 { font-size: 28px; color: var(--secondary-color); }
-        
-        /* الأزرار */
-        .btn {
-            padding: 10px 20px; border-radius: 10px; border: none;
-            cursor: pointer; font-family: 'Tajawal'; font-weight: 700;
-            transition: 0.3s; display: inline-flex; align-items: center; gap: 8px;
+        .live-color { color: #238636; }
+        .dot {
+            height: 15px; width: 15px; background: #238636;
+            border-radius: 50%; animation: pulse 1.5s infinite;
         }
-        .btn-primary { background: var(--secondary-color); color: white; }
-        .btn-secondary { background: rgba(255, 255, 255, 0.1); color: white; }
-        .btn:hover { transform: translateY(-3px); opacity: 0.9; }
-
-        /* Stats Grid */
-        .stats-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px; margin-bottom: 30px;
-        }
-        .stat-card {
-            background: var(--card-bg); border-radius: 18px; padding: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.05); position: relative;
-        }
-        .stat-card i { font-size: 24px; color: var(--secondary-color); margin-bottom: 10px; }
-        .stat-value { font-size: 32px; font-weight: 800; display: block; }
-        .stat-label { font-size: 14px; color: rgba(255, 255, 255, 0.6); }
-
-        /* نبض النشطون الآن */
-        .active-now {
-            display: flex; align-items: center; gap: 10px; color: var(--success);
-            font-weight: 800; font-size: 18px; background: rgba(46, 204, 113, 0.1);
-            padding: 5px 15px; border-radius: 20px;
-        }
-        .pulse {
-            width: 10px; height: 10px; background: var(--success);
-            border-radius: 50%; box-shadow: 0 0 0 rgba(46, 204, 113, 0.4);
-            animation: pulse-animation 2s infinite;
-        }
-        @keyframes pulse-animation {
-            0% { box-shadow: 0 0 0 0px rgba(46, 204, 113, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(46, 204, 113, 0); }
-            100% { box-shadow: 0 0 0 0px rgba(46, 204, 113, 0); }
-        }
-
-        /* Charts */
-        .charts-section {
-            display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 30px;
-        }
-        .chart-container {
-            background: var(--card-bg); padding: 25px; border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1); height: 400px;
-        }
-
-        /* Table */
-        .table-section {
-            background: var(--card-bg); border-radius: 20px; padding: 20px;
-            overflow-x: auto; border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        table { width: 100%; border-collapse: collapse; text-align: right; }
-        th { padding: 15px; border-bottom: 2px solid var(--secondary-color); color: var(--secondary-color); }
-        td { padding: 12px; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-
-        /* Responsive */
-        @media (max-width: 992px) {
-            .charts-section { grid-template-columns: 1fr; }
+        @keyframes pulse {
+            0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-    <div id="auth-overlay">
-        <div class="auth-box">
-            <i class="fas fa-lock" style="font-size: 40px; color: var(--secondary-color);"></i>
-            <h2 style="margin-top:15px;">لوحة تحكم ابن المختار</h2>
-            <p>يرجى إدخال كلمة المرور للمتابعة</p>
-            <input type="password" id="admin-pass" placeholder="••••••••">
-            <button class="btn btn-primary" style="width:100%" onclick="checkAuth()">دخول</button>
-        </div>
-    </div>
-
-    <div class="container" id="main-content">
-        <header class="dashboard-header">
-            <div class="header-top">
-                <div class="header-title">
-                    <h1><i class="fas fa-rocket"></i> تحليلات ابن المختار</h1>
-                    <p>مراقبة أداء المتجر والزوار مباشرة</p>
-                </div>
-                <div class="active-now">
-                    <div class="pulse"></div>
-                    نشط الآن: <span id="live-count">0</span>
-                </div>
-                <div class="header-actions">
-                    <button class="btn btn-secondary" onclick="refreshData()">
-                        <i class="fas fa-sync-alt"></i> تحديث
-                    </button>
-                    <button class="btn btn-primary" onclick="exportData()">
-                        <i class="fas fa-file-export"></i> تصدير البيانات
-                    </button>
-                </div>
-            </div>
-        </header>
-
-        <div class="stats-grid">
-            <div class="stat-card">
-                <i class="fas fa-users"></i>
-                <span class="stat-value" id="total-visits">0</span>
-                <span class="stat-label">إجمالي الزيارات</span>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-user-check"></i>
-                <span class="stat-value" id="unique-users">0</span>
-                <span class="stat-label">زوار فريدون</span>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-mobile-alt"></i>
-                <span class="stat-value" id="mobile-pct">0%</span>
-                <span class="stat-label">تصفح الموبايل</span>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-stopwatch"></i>
-                <span class="stat-value" id="avg-time">0ث</span>
-                <span class="stat-label">متوسط البقاء</span>
-            </div>
-            <div class="stat-card">
-                <i class="fas fa-map-marker-alt"></i>
-                <span class="stat-value" id="top-city">---</span>
-                <span class="stat-label">أكثر المدن نشاطاً</span>
-            </div>
+    <div class="container">
+        <div class="stat-box">
+            <div class="label"><div class="dot"></div> متصل الآن</div>
+            <p class="number live-color" id="live-count">0</p>
         </div>
 
-        <div class="charts-section">
-            <div class="chart-container">
-                <h3 style="margin-bottom:15px;"><i class="fas fa-chart-area"></i> حركة الزوار (آخر 7 أيام)</h3>
-                <canvas id="mainChart"></canvas>
-            </div>
-            <div class="chart-container">
-                <h3 style="margin-bottom:15px;"><i class="fas fa-pie-chart"></i> توزيع الأجهزة</h3>
-                <canvas id="deviceChart"></canvas>
-            </div>
-        </div>
-
-        <div class="table-section">
-            <h3 style="margin-bottom:15px;"><i class="fas fa-list"></i> آخر 20 زيارة حقيقية</h3>
-            <table>
-                <thead>
-                    <tr>
-                        <th>الوقت</th>
-                        <th>الصفحة</th>
-                        <th>الجهاز</th>
-                        <th>المصدر</th>
-                        <th>المدة</th>
-                    </tr>
-                </thead>
-                <tbody id="visits-table-body">
-                    </tbody>
-            </table>
+        <div class="stat-box">
+            <div class="label">إجمالي الزيارات</div>
+            <p class="number" id="total-count">0</p>
         </div>
     </div>
 
     <script>
-        // --- إعدادات Supabase ---
-        const SB_URL = 'https://ukjgzbgzzmlprnhlwgpr.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVramd6Ymd6em1scHJuaGx3Z3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NTM4NzAsImV4cCI6MjA4MTIyOTg3MH0.A-xvwqyDxwxDTeiB8nBgOwrJTPLWenYlO99nxbgobTw';
-        const sb = supabase.createClient(SB_URL, SB_KEY);
+        // إعداد الاتصال ببياناتك
+        const sb = supabase.createClient('https://ukjgzbgzzmlprnhlwgpr.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVramd6Ymd6em1scHJuaGx3Z3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NTM4NzAsImV4cCI6MjA4MTIyOTg3MH0.A-xvwqyDxwxDTeiB8nBgOwrJTPLWenYlO99nxbgobTw');
 
-        let visitsData = [];
-        let mainChart, deviceChart;
-
-        // --- نظام الحماية ---
-        function checkAuth() {
-            const pass = document.getElementById('admin-pass').value;
-            if (pass === "1234") { // يمكنك تغيير كلمة المرور هنا
-                document.getElementById('auth-overlay').style.display = 'none';
-                document.getElementById('main-content').style.display = 'block';
-                initDashboard();
-            } else {
-                alert("كلمة المرور خاطئة!");
-            }
-        }
-
-        // --- تهيئة اللوحة ---
-        async function initDashboard() {
-            await loadVisitsData();
-            // تحديث تلقائي كل 30 ثانية
-            setInterval(loadVisitsData, 30000);
-        }
-
-        async function loadVisitsData() {
+        async function updateStats() {
             try {
-                const { data, error } = await sb
+                // 1. جلب الإجمالي (بدون استهلاك بيانات)
+                // نستخدم head:true لجلب العدد فقط بدون أي سجلات
+                const { count, error: err1 } = await sb
                     .from('visits')
-                    .select('*')
-                    .order('visited_at', { ascending: false });
+                    .select('*', { count: 'exact', head: true });
 
-                if (error) throw error;
-                visitsData = data;
-                
-                updateStats();
-                renderCharts();
-                renderTable();
-            } catch (err) {
-                console.error("Error loading data:", err);
-            }
+                if (!err1) document.getElementById('total-count').innerText = count.toLocaleString();
+
+                // 2. جلب المتصلين الآن (فلترة سيرفر سريعة)
+                const fiveMin = new Date(Date.now() - 5 * 60000).toISOString();
+                const { count: liveCount, error: err2 } = await sb
+                    .from('visits')
+                    .select('*', { count: 'exact', head: true })
+                    .gt('visited_at', fiveMin);
+
+                if (!err2) document.getElementById('live-count').innerText = liveCount;
+
+            } catch (e) { console.error(e); }
         }
 
-        function updateStats() {
-            // إجمالي الزيارات
-            document.getElementById('total-visits').innerText = visitsData.length;
-
-            // زوار فريدون
-            const unique = new Set(visitsData.map(v => v.visitor_id)).size;
-            document.getElementById('unique-users').innerText = unique;
-
-            // حساب النشطون الآن (زيارات في آخر 5 دقائق)
-            const fiveMinsAgo = new Date(Date.now() - 5 * 60000);
-            const active = visitsData.filter(v => new Date(v.visited_at) > fiveMinsAgo).length;
-            document.getElementById('live-count').innerText = active;
-
-            // تحليل الأجهزة (حقيقي بناءً على User Agent)
-            let mobileCount = 0;
-            visitsData.forEach(v => {
-                if (/Mobi|Android|iPhone/i.test(v.user_agent)) mobileCount++;
-            });
-            const mobilePct = visitsData.length > 0 ? Math.round((mobileCount / visitsData.length) * 100) : 0;
-            document.getElementById('mobile-pct').innerText = mobilePct + "%";
-        }
-
-        function renderCharts() {
-            // المخطط الرئيسي (آخر 7 أيام)
-            const ctx1 = document.getElementById('mainChart').getContext('2d');
-            if (mainChart) mainChart.destroy();
-            
-            // تجميع البيانات حسب اليوم
-            const last7Days = [...Array(7)].map((_, i) => {
-                const d = new Date();
-                d.setDate(d.getDate() - i);
-                return d.toISOString().split('T')[0];
-            }).reverse();
-
-            const dayCounts = last7Days.map(day => 
-                visitsData.filter(v => v.visited_at.startsWith(day)).length
-            );
-
-            mainChart = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: last7Days,
-                    datasets: [{
-                        label: 'عدد الزيارات',
-                        data: dayCounts,
-                        borderColor: '#FF8C00',
-                        backgroundColor: 'rgba(255, 140, 0, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-
-            // مخطط الأجهزة
-            const ctx2 = document.getElementById('deviceChart').getContext('2d');
-            if (deviceChart) deviceChart.destroy();
-            
-            let mob = 0, desk = 0;
-            visitsData.forEach(v => {
-                if (/Mobi|Android|iPhone/i.test(v.user_agent)) mob++; else desk++;
-            });
-
-            deviceChart = new Chart(ctx2, {
-                type: 'doughnut',
-                data: {
-                    labels: ['موبايل', 'حاسوب'],
-                    datasets: [{
-                        data: [mob, desk],
-                        backgroundColor: ['#FF8C00', '#001F3F']
-                    }]
-                },
-                options: { responsive: true, maintainAspectRatio: false }
-            });
-        }
-
-        function renderTable() {
-            const tbody = document.getElementById('visits-table-body');
-            tbody.innerHTML = "";
-
-            visitsData.slice(0, 20).forEach(v => {
-                const isMobile = /Mobi|Android|iPhone/i.test(v.user_agent);
-                const time = new Date(v.visited_at).toLocaleTimeString('ar-SA');
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${time}</td>
-                        <td dir="ltr" style="font-size:12px;">${v.page_path}</td>
-                        <td><i class="fas fa-${isMobile ? 'mobile-alt' : 'desktop'}"></i></td>
-                        <td>${v.referrer ? 'إعلان/خارجي' : 'مباشر'}</td>
-                        <td>${v.duration || 0}ث</td>
-                    </tr>
-                `;
-            });
-        }
-
-        function refreshData() {
-            loadVisitsData();
-        }
-
-        function exportData() {
-            let csv = "Time,Page,Device\n";
-            visitsData.forEach(v => {
-                csv += `${v.visited_at},${v.page_path},${v.user_agent.includes('Mobi') ? 'Mobile' : 'Desktop'}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.setAttribute('hidden', '');
-            a.setAttribute('href', url);
-            a.setAttribute('download', 'visits_report.csv');
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        }
+        // تحديث كل 15 ثانية (توازن مثالي بين اللحظية وتوفير الاستهلاك)
+        updateStats();
+        setInterval(updateStats, 15000);
     </script>
 </body>
 </html>
