@@ -2,57 +2,21 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>عداد ابن المختار الاقتصادي</title>
+    <title>عداد ابن المختار المطور</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@900&display=swap" rel="stylesheet">
     <style>
-        body {
-            background-color: #010409;
-            color: white;
-            font-family: 'Tajawal', sans-serif;
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .container {
-            display: flex;
-            gap: 40px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-        .stat-box {
-            background: #0d1117;
-            padding: 50px;
-            border-radius: 40px;
-            border: 2px solid #30363d;
-            text-align: center;
-            min-width: 300px;
-        }
-        .label {
-            font-size: 1.5rem;
-            color: #8b949e;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .number {
-            font-size: 7rem; /* رقم ضخم */
-            font-weight: 900;
-            margin: 0;
-            color: #FF8C00;
-        }
+        body { background-color: #010409; color: white; font-family: 'Tajawal', sans-serif; margin: 0; display: flex; flex-direction: column; justify-content: center; align-items: center; min-height: 100vh; }
+        .container { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; padding: 20px; }
+        .stat-box { background: #0d1117; padding: 30px; border-radius: 25px; border: 2px solid #30363d; text-align: center; min-width: 220px; }
+        .label { font-size: 1.1rem; color: #8b949e; margin-bottom: 10px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .number { font-size: 4rem; font-weight: 900; margin: 0; color: #FF8C00; }
         .live-color { color: #238636; }
-        .dot {
-            height: 15px; width: 15px; background: #238636;
-            border-radius: 50%; animation: pulse 1.5s infinite;
-        }
-        @keyframes pulse {
-            0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; }
-        }
+        .today-color { color: #58a6ff; }
+        .dot { height: 10px; width: 10px; background: #238636; border-radius: 50%; animation: pulse 1.5s infinite; }
+        .refresh-btn { margin-top: 20px; padding: 10px 20px; background: #21262d; border: 1px solid #30363d; color: #c9d1d9; border-radius: 8px; cursor: pointer; font-family: inherit; transition: 0.3s; }
+        .refresh-btn:hover { background: #30363d; }
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -64,40 +28,64 @@
         </div>
 
         <div class="stat-box">
-            <div class="label">إجمالي الزيارات</div>
+            <div class="label">زيارات اليوم</div>
+            <p class="number today-color" id="today-count">0</p>
+        </div>
+
+        <div class="stat-box">
+            <div class="label">إجمالي الزوار</div>
             <p class="number" id="total-count">0</p>
         </div>
     </div>
 
+    <button class="refresh-btn" onclick="updateStats()">🔄 تحديث يدوي</button>
+
     <script>
-        // إعداد الاتصال ببياناتك
-        const sb = supabase.createClient('https://ukjgzbgzzmlprnhlwgpr.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVramd6Ymd6em1scHJuaGx3Z3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NTM4NzAsImV4cCI6MjA4MTIyOTg3MH0.A-xvwqyDxwxDTeiB8nBgOwrJTPLWenYlO99nxbgobTw');
+        const SUPABASE_URL = 'https://mpcuradmirhcfmwvsylt.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_MJRUl3ON-d61CnFsJ-pFJA_Nbbpg_gZ';
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function updateStats() {
-            try {
-                // 1. جلب الإجمالي (بدون استهلاك بيانات)
-                // نستخدم head:true لجلب العدد فقط بدون أي سجلات
-                const { count, error: err1 } = await sb
-                    .from('visits')
-                    .select('*', { count: 'exact', head: true });
-
-                if (!err1) document.getElementById('total-count').innerText = count.toLocaleString();
-
-                // 2. جلب المتصلين الآن (فلترة سيرفر سريعة)
-                const fiveMin = new Date(Date.now() - 5 * 60000).toISOString();
-                const { count: liveCount, error: err2 } = await sb
-                    .from('visits')
-                    .select('*', { count: 'exact', head: true })
-                    .gt('visited_at', fiveMin);
-
-                if (!err2) document.getElementById('live-count').innerText = liveCount;
-
-            } catch (e) { console.error(e); }
+        // 1. تسجيل الزيارة بشكل فردي (مرة واحدة في تاريخ المتصفح)
+        async function logUniqueVisit() {
+            const isReturningUser = localStorage.getItem('is_old_visitor');
+            
+            if (!isReturningUser) {
+                try {
+                    const { error } = await sb.from('visits').insert([{ page_path: window.location.pathname }]);
+                    if (!error) localStorage.setItem('is_old_visitor', 'true');
+                } catch (e) { console.error(e); }
+            }
         }
 
-        // تحديث كل 15 ثانية (توازن مثالي بين اللحظية وتوفير الاستهلاك)
-        updateStats();
-        setInterval(updateStats, 15000);
+        // 2. تحديث الإحصائيات
+        async function updateStats() {
+            try {
+                // الوقت الحالي
+                const now = new Date();
+                
+                // بداية اليوم (الساعة 00:00:00)
+                const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+                
+                // آخر 5 دقائق للمتصلين الآن
+                const fiveMinAgo = new Date(now.getTime() - 5 * 60000).toISOString();
+
+                // تنفيذ الطلبات بالتوازي لتسريع الأداء
+                const [totalRes, todayRes, liveRes] = await Promise.all([
+                    sb.from('visits').select('*', { count: 'exact', head: true }),
+                    sb.from('visits').select('*', { count: 'exact', head: true }).gt('created_at', startOfToday),
+                    sb.from('visits').select('*', { count: 'exact', head: true }).gt('created_at', fiveMinAgo)
+                ]);
+
+                if (!totalRes.error) document.getElementById('total-count').innerText = totalRes.count.toLocaleString();
+                if (!todayRes.error) document.getElementById('today-count').innerText = todayRes.count.toLocaleString();
+                if (!liveRes.error) document.getElementById('live-count').innerText = liveRes.count.toLocaleString();
+
+            } catch (e) { console.error("Update Error:", e); }
+        }
+
+        // التشغيل
+        logUniqueVisit().then(updateStats);
+        setInterval(updateStats, 60000); // تحديث تلقائي كل دقيقة
     </script>
 </body>
 </html>
