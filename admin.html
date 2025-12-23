@@ -42,6 +42,7 @@
       display: flex;
       gap: 10px;
       align-items: center;
+      flex-wrap: wrap;
     }
     .nav-link { 
       text-decoration: none; 
@@ -55,11 +56,12 @@
       display: inline-flex;
       align-items: center;
       gap: 5px;
+      white-space: nowrap;
     }
     .nav-link:hover { background: var(--primary); color: #fff; }
     .nav-link.active-tab { background: var(--primary); color: #fff; }
 
-    .admin-setting-container {
+    .admin-links-container {
         padding: 25px;
         background: var(--card-bg);
         border-radius: 16px;
@@ -67,13 +69,50 @@
         box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         margin-top: 20px;
     }
-    .admin-setting-container h2 {
+    .admin-links-container h2 {
         color: var(--primary);
         border-bottom: 1px solid #eee;
         padding-bottom: 10px;
+        margin-top: 0;
     }
-    .setting-item {
-        margin-bottom: 20px;
+    .admin-links-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 20px;
+    }
+    .admin-link {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 20px 15px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        text-decoration: none;
+        color: #333;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+    .admin-link:hover {
+        background: var(--primary);
+        color: white;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(198, 160, 71, 0.2);
+        border-color: var(--primary);
+    }
+    .admin-link i {
+        font-size: 24px;
+        margin-bottom: 10px;
+        color: var(--primary);
+    }
+    .admin-link:hover i {
+        color: white;
+    }
+    .admin-link span {
+        font-weight: 600;
+        font-size: 14px;
+        text-align: center;
     }
 
     .container { max-width: 900px; margin: 0 auto; padding: 16px; }
@@ -182,6 +221,38 @@
     }
     .sizes-container { margin: 20px 0; }
     
+    /* أنماط إضافة تصنيف جديد */
+    .category-add-container {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+    .category-add-container .input-field {
+        margin-bottom: 0;
+    }
+    .add-category-btn {
+        background: var(--success-color);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        padding: 0 20px;
+        cursor: pointer;
+        font-family: 'Tajawal';
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        transition: background 0.3s;
+        white-space: nowrap;
+    }
+    .add-category-btn:hover {
+        background: #218838;
+    }
+    .add-category-btn:disabled {
+        background: #ccc;
+        cursor: not-allowed;
+    }
+    
     /* الأنماط الأخرى تبقى كما هي */
     .upload-area { 
       border: 2px dashed #ccc; 
@@ -216,7 +287,6 @@
       position: absolute; top: 5px; right: 5px; background: rgba(220, 53, 69, 0.9); color: white; border: none; border-radius: 50%; width: 26px; height: 26px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; z-index: 10; transition: all 0.2s;
     }
     .remove-btn:hover { background: #dc3545; transform: scale(1.1); }
-    .file-info { font-size: 13px; color: #666; margin-bottom: 10px; padding: 8px 12px; background: #f8f9fa; border-radius: 8px; text-align: center;}
     .compression-badge { position: absolute; bottom: 5px; left: 5px; background: var(--success-color); color: white; font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; z-index: 5;}
     .images-counter { display: inline-block; background: var(--info-color); color: white; padding: 2px 10px; border-radius: 12px; font-size: 12px; margin-left: 8px; font-weight: bold;}
     .btn-save { 
@@ -278,6 +348,16 @@
       .upload-area { padding: 25px 15px; }
       .size-row { flex-direction: column; }
       .size-price-input { width: 100%; }
+      .admin-links-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
+      .admin-nav {
+        gap: 5px;
+      }
+      .nav-link {
+        padding: 6px 10px;
+        font-size: 12px;
+      }
     }
   </style>
   
@@ -291,8 +371,8 @@
     <a href="#addProductSection" class="nav-link active-tab" id="navProductsList">
       <i class="fas fa-box"></i> إضافة منتج
     </a>
-    <a href="#adminSettingsSection" class="nav-link" id="navSettings">
-      <i class="fas fa-cog"></i> الإعدادات
+    <a href="#adminLinksSection" class="nav-link" id="navLinks">
+      <i class="fas fa-external-link-alt"></i> الصفحات
     </a>
     <a href="product_list.html" class="nav-link" id="navViewProducts">
       <i class="fas fa-list-ul"></i> عرض المنتجات
@@ -335,10 +415,29 @@
       
       <div style="flex: 1;">
         <label class="required">التصنيف</label>
-        <select id="categorySelect" class="input-field" required>
-          <option value="" disabled selected>جاري تحميل التصنيفات...</option>
-        </select>
+        <div class="category-add-container">
+          <select id="categorySelect" class="input-field" required style="flex: 1;">
+            <option value="" disabled selected>جاري تحميل التصنيفات...</option>
+          </select>
+          <button type="button" id="addCategoryBtn" class="add-category-btn">
+            <i class="fas fa-plus"></i> جديد
+          </button>
+        </div>
         <div id="categoryError" class="error-message">يرجى اختيار تصنيف للمنتج</div>
+        
+        <!-- حقل إضافة تصنيف جديد -->
+        <div id="newCategoryContainer" style="display: none; margin-top: 10px;">
+          <label for="newCategoryName">اسم التصنيف الجديد</label>
+          <div style="display: flex; gap: 10px;">
+            <input type="text" id="newCategoryName" class="input-field" placeholder="أدخل اسم التصنيف الجديد">
+            <button type="button" id="saveNewCategoryBtn" class="add-category-btn" style="background: var(--primary);">
+              <i class="fas fa-save"></i> حفظ
+            </button>
+            <button type="button" id="cancelNewCategoryBtn" class="remove-size-btn">
+              <i class="fas fa-times"></i> إلغاء
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -347,6 +446,9 @@
       <i class="fas fa-ruler-combined"></i>
       مقاسات المنتج (اختياري)
       <span class="images-counter" style="background: var(--info-color);">اختياري</span>
+      <small style="color: #888; font-weight: normal; margin-right: 10px;">
+        - عند إضافة مقاسات، سيتم إلغاء السعر الرئيسي
+      </small>
     </h3>
     
     <div class="sizes-container" id="sizesContainer">
@@ -400,29 +502,36 @@
     </button>
   </div>
   
-  <div class="admin-setting-container" id="adminSettingsSection">
-      <h2>⚙️ إعدادات المتجر العامة</h2>
+  <!-- قسم أزرار الانتقال للصفحات الأخرى -->
+  <div class="admin-links-container" id="adminLinksSection">
+      <h2>📋 روابط سريعة للصفحات</h2>
       
-      <h3 style="color: var(--success-color); border-bottom: 1px dashed #eee; padding-bottom: 5px;">إعدادات الخصم العام</h3>
-      
-      <div class="setting-item">
-          <label for="discountPercentageInput" style="display:block; font-weight:700; color:#444; margin-bottom:5px;">نسبة الخصم المئوية (%):</label>
-          <input type="number" id="discountPercentageInput" class="input-field" min="0" max="100" value="0" style="max-width:200px;">
+      <div class="admin-links-grid">
+        <a href="views.html" class="admin-link">
+          <i class="fas fa-eye"></i>
+          <span>معرفة عدد الزوار</span>
+        </a>
+        
+        <a href="khlil.html" class="admin-link">
+          <i class="fas fa-sort-amount-down"></i>
+          <span>ترتيب المنتجات</span>
+        </a>
+        
+        <a href="discount.html" class="admin-link">
+          <i class="fas fa-tags"></i>
+          <span>التحكم في الخصومات</span>
+        </a>
+        
+        <a href="khlilsh.html" class="admin-link">
+          <i class="fas fa-edit"></i>
+          <span>تعديل التسعيرات</span>
+        </a>
+        
+        <a href="index.html" class="admin-link">
+          <i class="fas fa-store"></i>
+          <span>صفحة عرض المنتجات</span>
+        </a>
       </div>
-
-      <div class="setting-item">
-          <label for="minAmountForDiscountInput" style="display:block; font-weight:700; color:#444; margin-bottom:5px;">أدنى مبلغ للشراء لتفعيل الخصم (بالريال اليمني):</label>
-          <div class="currency-input" style="max-width: 300px;">
-              <input type="number" id="minAmountForDiscountInput" class="input-field" min="0" value="0" step="1000">
-              <span class="currency-symbol">YER</span>
-          </div>
-          <small style="color: #888;">يجب أن يكون إجمالي المنتجات يساوي أو يزيد عن هذا المبلغ لتطبيق الخصم.</small>
-      </div>
-      
-      <button id="saveDiscountSettingsBtn" class="btn-save" style="background: var(--info-color);">
-          <i class="fas fa-hdd"></i>
-          حفظ إعدادات الخصم
-      </button>
   </div>
   
 </div>
@@ -434,9 +543,8 @@
     return false;
   };
 
-  // إعدادات Supabase
-  const SUPABASE_URL = 'https://ukjgzbgzzmlprnhlwgpr.supabase.co';
-  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVramd6Ymd6em1scHJuaGx3Z3ByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2NTM4NzAsImV4cCI6MjA4MTIyOTg3MH0.A-xvwqyDxwxDTeiB8nBgOwrJTPLWenYlO99nxbgobTw';
+  const SUPABASE_URL = 'https://mpcuradmirhcfmwvsylt.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_MJRUl3ON-d61CnFsJ-pFJA_Nbbpg_gZ';
 
   // التأكد من تحميل المكتبة
   if (typeof supabase === 'undefined') {
@@ -448,12 +556,8 @@
   const PRODUCTS_TABLE = 'products'; 
   const CATEGORIES_TABLE = 'categories'; 
   const STORAGE_BUCKET = 'products'; 
-  const SETTINGS_TABLE = 'settings';
 
-  // متغير لتخزين الإعدادات العامة
-  window.globalSettings = { discountPercentage: 0, minAmountForDiscount: 0 };
-
-  // مصفوفة لتخزين الملفات المختارة
+  // متغير لتخزين الملفات المختارة
   let selectedFiles = [];
   const MAX_IMAGES = 10;
 
@@ -465,6 +569,11 @@
     nameInput: document.getElementById("name"),
     priceInput: document.getElementById("price"),
     categorySelect: document.getElementById("categorySelect"),
+    addCategoryBtn: document.getElementById("addCategoryBtn"),
+    newCategoryContainer: document.getElementById("newCategoryContainer"),
+    newCategoryName: document.getElementById("newCategoryName"),
+    saveNewCategoryBtn: document.getElementById("saveNewCategoryBtn"),
+    cancelNewCategoryBtn: document.getElementById("cancelNewCategoryBtn"),
     imageInput: document.getElementById("imageInput"),
     descTextarea: document.getElementById("desc"),
     saveBtn: document.getElementById("saveBtn"),
@@ -482,14 +591,12 @@
     sizesContainer: document.getElementById("sizesContainer"),
     addSizeBtn: document.getElementById("addSizeBtn"),
     sizesError: document.getElementById("sizesError"),
-    // عناصر الإعدادات
-    adminSettingsSection: document.getElementById("adminSettingsSection"),
-    discountPercentageInput: document.getElementById("discountPercentageInput"),
-    minAmountForDiscountInput: document.getElementById("minAmountForDiscountInput"),
-    saveDiscountSettingsBtn: document.getElementById("saveDiscountSettingsBtn"),
+    // عناصر التنقل
+    adminLinksSection: document.getElementById("adminLinksSection"),
     navProductsList: document.getElementById("navProductsList"),
-    navSettings: document.getElementById("navSettings"),
-    // نهاية عناصر الإعدادات
+    navLinks: document.getElementById("navLinks"),
+    navViewProducts: document.getElementById("navViewProducts"),
+    // نهاية عناصر التنقل
     errorMessages: {
       name: document.getElementById("nameError"),
       price: document.getElementById("priceError"),
@@ -559,6 +666,13 @@
         price: sizePrice || null,
         hasCustomPrice: !!sizePrice
       });
+    }
+    
+    // إذا تم إضافة مقاس، نعطل السعر الرئيسي
+    if (productSizes.length > 0) {
+      elements.priceInput.disabled = true;
+      elements.priceInput.placeholder = "تم تعطيله بسبب وجود مقاسات";
+      elements.priceInput.title = "تم تعطيل السعر الرئيسي بسبب وجود مقاسات. استخدم أسعار المقاسات بدلاً من ذلك.";
     }
     
     // ربط أحداث المقاس
@@ -661,6 +775,13 @@
     // تحديث الفهرس لجميع المقاسات المتبقية
     updateSizeIndexes();
     
+    // إذا لم يعد هناك مقاسات، نفعّل السعر الرئيسي مرة أخرى
+    if (productSizes.length === 0) {
+      elements.priceInput.disabled = false;
+      elements.priceInput.placeholder = "مثال: 5000";
+      elements.priceInput.title = "";
+    }
+    
     showNotification('تم حذف المقاس', 'info');
   }
 
@@ -739,87 +860,90 @@
   }
 
   // ===========================================
-  // ============ نهاية دوال نظام المقاسات ============
+  // ============ دوال إضافة التصنيفات ============
   // ===========================================
 
-  // ===========================================
-  // ================ دوال الإدارة والإعدادات ================
-  // ===========================================
-
-  // ✅ جلب الإعدادات العامة من Supabase
-  async function fetchGlobalSettings() {
-      try {
-          const { data, error } = await sb
-              .from(SETTINGS_TABLE)
-              .select('*')
-              .eq('id', 'global')
-              .single();
-              
-          if (data) {
-              window.globalSettings.discountPercentage = data.discountPercentage || 0;
-              window.globalSettings.minAmountForDiscount = data.minAmountForDiscount || 0;
-              loadDiscountSettingsToUI();
-          }
-      } catch (e) {
-          console.error("Error loading global settings:", e);
-      }
+  // ✅ عرض/إخفاء حقل إضافة تصنيف جديد
+  function toggleNewCategoryField(show = true) {
+    if (show) {
+      elements.newCategoryContainer.style.display = 'block';
+      elements.newCategoryName.focus();
+      elements.addCategoryBtn.disabled = true;
+    } else {
+      elements.newCategoryContainer.style.display = 'none';
+      elements.newCategoryName.value = '';
+      elements.addCategoryBtn.disabled = false;
+    }
   }
 
-  // ✅ تحميل الإعدادات الحالية لعناصر الإدخال في واجهة الإدارة
-  function loadDiscountSettingsToUI() {
-      elements.discountPercentageInput.value = window.globalSettings.discountPercentage || 0;
-      elements.minAmountForDiscountInput.value = window.globalSettings.minAmountForDiscount || 0;
-  }
-
-  // ✅ حفظ إعدادات الخصم في Supabase
-  async function saveDiscountSettings() {
-      const percentage = parseFloat(elements.discountPercentageInput.value) || 0;
-      const minAmount = parseFloat(elements.minAmountForDiscountInput.value) || 0;
+  // ✅ إضافة تصنيف جديد إلى Supabase
+  async function addNewCategory() {
+    const categoryName = elements.newCategoryName.value.trim();
+    
+    if (!categoryName) {
+      showNotification('يرجى إدخال اسم التصنيف', 'error');
+      elements.newCategoryName.focus();
+      return;
+    }
+    
+    if (categoryName.length < 2) {
+      showNotification('اسم التصنيف يجب أن يكون على الأقل حرفين', 'error');
+      elements.newCategoryName.focus();
+      return;
+    }
+    
+    const originalText = elements.saveNewCategoryBtn.innerHTML;
+    elements.saveNewCategoryBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    elements.saveNewCategoryBtn.disabled = true;
+    
+    try {
+      // التحقق من وجود التصنيف مسبقاً
+      const { data: existingCategories } = await sb
+        .from(CATEGORIES_TABLE)
+        .select('name')
+        .eq('name', categoryName);
       
-      if (percentage < 0 || percentage > 100 || minAmount < 0) {
-            showNotification("❌ يرجى إدخال قيم صحيحة لإعدادات الخصم.", 'error');
-            return;
+      if (existingCategories && existingCategories.length > 0) {
+        showNotification('هذا التصنيف موجود مسبقاً', 'error');
+        elements.saveNewCategoryBtn.innerHTML = originalText;
+        elements.saveNewCategoryBtn.disabled = false;
+        return;
       }
       
-      const originalText = elements.saveDiscountSettingsBtn.innerHTML;
-      elements.saveDiscountSettingsBtn.disabled = true;
-      elements.saveDiscountSettingsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
-      showNotification("⏳ يتم حفظ الإعدادات العامة...");
-
-      try {
-          const { error } = await sb
-              .from(SETTINGS_TABLE)
-              .upsert(
-                  { 
-                      id: 'global',
-                      discountPercentage: percentage, 
-                      minAmountForDiscount: minAmount 
-                  },
-                  { onConflict: 'id' }
-              );
-
-          if (error) {
-            console.error(error);
-            throw new Error(`Supabase RLS Error: ${error.message}`);
-          }
-          
-          window.globalSettings.discountPercentage = percentage;
-          window.globalSettings.minAmountForDiscount = minAmount;
-          
-          showNotification("✅ تم حفظ إعدادات الخصم بنجاح!", 'success');
-
-      } catch (e) {
-          console.error("Error saving discount settings:", e);
-          let errorMsg = "❌ فشل حفظ الإعدادات: خطأ في السيرفر.";
-          if (e.message.includes('RLS')) {
-             errorMsg = "❌ فشل حفظ الإعدادات: خطأ في قواعد الأمان (RLS) في Supabase. يرجى مراجعة الإرشادات في الأسفل.";
-          }
-          showNotification(errorMsg, 'error');
-      } finally {
-          elements.saveDiscountSettingsBtn.disabled = false;
-          elements.saveDiscountSettingsBtn.innerHTML = originalText;
-      }
+      // إضافة التصنيف الجديد
+      const { error } = await sb
+        .from(CATEGORIES_TABLE)
+        .insert([{ name: categoryName }]);
+      
+      if (error) throw error;
+      
+      showNotification(`تم إضافة التصنيف "${categoryName}" بنجاح`, 'success');
+      
+      // إغلاق حقل الإضافة
+      toggleNewCategoryField(false);
+      
+      // إعادة تحميل التصنيفات
+      await loadCategories();
+      
+      // تحديد التصنيف المضاف حديثاً
+      elements.categorySelect.value = categoryName;
+      
+    } catch (error) {
+      console.error('خطأ في إضافة التصنيف:', error);
+      showNotification('حدث خطأ أثناء إضافة التصنيف', 'error');
+    } finally {
+      elements.saveNewCategoryBtn.innerHTML = originalText;
+      elements.saveNewCategoryBtn.disabled = false;
+    }
   }
+
+  // ===========================================
+  // ============ نهاية دوال التصنيفات ============
+  // ===========================================
+
+  // ===========================================
+  // ================ دوال التنقل ================
+  // ===========================================
 
   // ✅ دالة التحكم بالتنقل
   function handleNav(targetSectionId) {
@@ -830,25 +954,14 @@
     if (targetSectionId === '#addProductSection') {
         elements.navProductsList.classList.add('active-tab');
         document.getElementById('addProductSection').scrollIntoView({ behavior: 'smooth' });
-    } else if (targetSectionId === '#adminSettingsSection') {
-        elements.navSettings.classList.add('active-tab');
-        document.getElementById('adminSettingsSection').scrollIntoView({ behavior: 'smooth' });
+    } else if (targetSectionId === '#adminLinksSection') {
+        elements.navLinks.classList.add('active-tab');
+        document.getElementById('adminLinksSection').scrollIntoView({ behavior: 'smooth' });
     }
   }
 
-  // ربط الأزرار الجديدة
-  elements.saveDiscountSettingsBtn.addEventListener('click', saveDiscountSettings);
-  elements.navProductsList.addEventListener('click', (e) => {
-    e.preventDefault();
-    handleNav('#addProductSection');
-  });
-  elements.navSettings.addEventListener('click', (e) => {
-    e.preventDefault();
-    handleNav('#adminSettingsSection');
-  });
-  
   // ===========================================
-  // ============ نهاية دوال الإدارة والإعدادات ============
+  // ============ نهاية دوال التنقل ============
   // ===========================================
 
   // ================= دالة ضغط الصور وتحويلها إلى WebP =================
@@ -1013,13 +1126,20 @@
       elements.errorMessages.name.style.display = 'none';
     }
     
-    // السعر - دائماً مطلوب (سواء كان هناك مقاسات أم لا)
+    // السعر - مطلوب فقط إذا لم تكن هناك مقاسات
     const priceValue = parseFloat(elements.priceInput.value);
-    if (isNaN(priceValue) || priceValue <= 0) {
-      elements.priceInput.classList.add('error');
-      elements.errorMessages.price.style.display = 'block';
-      isValid = false;
+    if (productSizes.length === 0) {
+      // إذا لم تكن هناك مقاسات، السعر مطلوب
+      if (isNaN(priceValue) || priceValue <= 0) {
+        elements.priceInput.classList.add('error');
+        elements.errorMessages.price.style.display = 'block';
+        isValid = false;
+      } else {
+        elements.priceInput.classList.remove('error');
+        elements.errorMessages.price.style.display = 'none';
+      }
     } else {
+      // إذا كانت هناك مقاسات، نتجاوز عن السعر الرئيسي
       elements.priceInput.classList.remove('error');
       elements.errorMessages.price.style.display = 'none';
     }
@@ -1047,6 +1167,18 @@
     // التحقق من صحة المقاسات إذا كانت موجودة
     if (productSizes.length > 0) {
       isValid = validateSizes() && isValid;
+      
+      // التحقق من أن جميع المقاسات لديها أسعار صحيحة أو استخدام السعر الأساسي
+      let hasValidSizes = true;
+      productSizes.forEach((size, index) => {
+        if (!size.name || size.name.trim() === '') {
+          hasValidSizes = false;
+        }
+      });
+      
+      if (!hasValidSizes) {
+        isValid = false;
+      }
     }
     
     return isValid;
@@ -1287,6 +1419,35 @@
     showNotification('تم إضافة مقاس جديد', 'info');
   });
 
+  // ✅ ربط أحداث التصنيفات
+  elements.addCategoryBtn.addEventListener('click', () => {
+    toggleNewCategoryField(true);
+  });
+
+  elements.saveNewCategoryBtn.addEventListener('click', addNewCategory);
+
+  elements.cancelNewCategoryBtn.addEventListener('click', () => {
+    toggleNewCategoryField(false);
+  });
+
+  // السماح باستخدام Enter لحفظ التصنيف الجديد
+  elements.newCategoryName.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') {
+      addNewCategory();
+    }
+  });
+
+  // ✅ ربط أحداث التنقل
+  elements.navProductsList.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleNav('#addProductSection');
+  });
+
+  elements.navLinks.addEventListener('click', (e) => {
+    e.preventDefault();
+    handleNav('#adminLinksSection');
+  });
+
   // ✅ ربط الزر بالدالة الأساسية للحفظ
   elements.saveBtn.addEventListener('click', async function() {
     if (!validateForm()) {
@@ -1300,6 +1461,9 @@
     const description = elements.descTextarea.value.trim();
     const sizes = getSizesData();
 
+    // إذا كانت هناك مقاسات، نستخدم سعر المقاسات بدلاً من السعر الأساسي
+    let finalPrice = productSizes.length > 0 ? 0 : parseFloat(price);
+    
     const originalText = elements.saveBtn.innerHTML;
     elements.saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحفظ...';
     elements.saveBtn.disabled = true;
@@ -1356,7 +1520,7 @@
       
       const insertData = {
         name: name, 
-        price: Number(price), 
+        price: finalPrice, 
         description: description, 
         category: category, 
         image: uploadedImageUrls,
@@ -1377,7 +1541,7 @@
             .from(PRODUCTS_TABLE)
             .insert({
               name: name, 
-              price: Number(price), 
+              price: finalPrice, 
               description: description, 
               category: category, 
               image: uploadedImageUrls,
@@ -1434,6 +1598,7 @@
     selectedFiles = [];
     productSizes = [];
     elements.sizesContainer.innerHTML = '';
+    toggleNewCategoryField(false);
     
     updateImagesCounter();
     
@@ -1455,6 +1620,11 @@
     
     elements.uploadProgress.style.display = 'none';
     elements.sizesError.style.display = 'none';
+    
+    // تفعيل السعر الرئيسي مرة أخرى
+    elements.priceInput.disabled = false;
+    elements.priceInput.placeholder = "مثال: 5000";
+    elements.priceInput.title = "";
   }
 
   // تحميل الفئات
@@ -1475,9 +1645,11 @@
           select.add(new Option(cat.name, cat.name));
         });
       } else {
-["ادوات منزليه", "أجهزة منزلية", "مستلزمات وعنايه شخصيه"].forEach(cat => {
-  select.add(new Option(cat, cat));
-});
+        // التصنيفات الافتراضية
+        const defaultCategories = ["ادوات منزليه", "أجهزة منزلية", "مستلزمات وعنايه شخصيه"];
+        defaultCategories.forEach(cat => {
+          select.add(new Option(cat, cat));
+        });
       }
     } catch(e) {
       console.error('خطأ في تحميل التصنيفات:', e);
@@ -1499,10 +1671,9 @@
     });
   });
 
-  // 👈 تحميل الإعدادات والفئات عند بدء التحميل
+  // 👈 تحميل الفئات عند بدء التحميل
   document.addEventListener('DOMContentLoaded', () => {
       loadCategories();
-      fetchGlobalSettings();
       
       // إضافة حدث لإضافة مقاس جديد عند الضغط على زر الإضافة
       elements.addSizeBtn.addEventListener('click', () => {
@@ -1514,6 +1685,7 @@
   setTimeout(() => {
     console.log('✅ نظام الإدارة جاهز للعمل!');
     console.log('✅ نظام المقاسات جاهز!');
+    console.log('✅ نظام التصنيفات الجديد جاهز!');
   }, 1000);
 
 </script>
