@@ -104,8 +104,7 @@
     </div>
 
     <div id="productContent">
-        <!-- المحتوى يتحمل ديناميكياً -->
-    </div>
+        </div>
 </div>
 
 <div class="footer-actions">
@@ -227,11 +226,11 @@
         if (Array.isArray(productData.image)) {
             imgs = productData.image.map(img => {
                 const fullUrl = getProductImageUrl(img);
-                return fullUrl ? fullUrl : getPlaceholderSVG(); // ✅ رابط مباشر بدون optimize
+                return fullUrl ? fullUrl : getPlaceholderSVG(); 
             });
         } else if (productData.image) {
             const fullUrl = getProductImageUrl(productData.image);
-            imgs = [fullUrl ? fullUrl : getPlaceholderSVG()]; // ✅ رابط مباشر بدون optimize
+            imgs = [fullUrl ? fullUrl : getPlaceholderSVG()]; 
         } else {
             imgs = [getPlaceholderSVG()];
         }
@@ -353,7 +352,7 @@
         }
     }
 
-    // ✅ إرسال واتساب
+    // ✅ إرسال واتساب (تم التعديل لإزالة الرابط)
     function sendWhatsApp() {
         if (!productData) return;
         
@@ -361,9 +360,9 @@
         const sar = document.getElementById('priceSAR').innerText;
         const sizeInfo = selectedSize ? ` (المقاس: ${selectedSize.name})` : '';
         
+        // تم حذف سطر الرابط من هنا
         const msg = `أرغب في طلب: *${productData.name}*${sizeInfo}\n\n` +
-                   `السعر: *${yer} ر.ي* | *${sar} ر.س*\n` +
-                   `رابط المنتج: ${window.location.href}`;
+                   `السعر: *${yer} ر.ي* | *${sar} ر.س*`;
         
         window.open(`https://wa.me/967773266534?text=${encodeURIComponent(msg)}`);
     }
@@ -377,7 +376,7 @@
         let productImage = '';
         if (productData.image) {
             const fullUrl = getProductImageUrl(productData.image);
-            productImage = fullUrl ? fullUrl : getPlaceholderSVG(); // ✅ رابط مباشر بدون optimize
+            productImage = fullUrl ? fullUrl : getPlaceholderSVG(); 
         }
         
         const existingIndex = cart.findIndex(item => 
