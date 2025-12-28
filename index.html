@@ -314,6 +314,12 @@
             height: 100%;
             object-fit: cover;
             transition: transform 0.3s ease;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .product-img.loaded {
+            opacity: 1;
         }
         
         .card-image-wrapper:hover .product-img {
@@ -515,6 +521,12 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .cart-item-image img.loaded {
+            opacity: 1;
         }
         
         .cart-item-details {
@@ -910,11 +922,15 @@
         }
         
         /* زر تحميل المزيد */
-        .load-more-container {
+                .load-more-container {
             grid-column: 1 / -1;
             text-align: center;
             padding: 20px;
+            /* هذا السطر الجديد سيرفع الزر للأعلى بعيداً عن الشريط السفلي */
+            padding-bottom: 100px !important; 
+            margin-bottom: 20px;
         }
+
         
         .load-more-btn {
             background: var(--secondary-color);
@@ -1251,7 +1267,8 @@
         </button>
 
         <div class="top-bar">
-            <img src="logo.png" alt="ابن المختار للأدوات المنزلية" class="store-logo" onclick="switchTab('home')" style="cursor:pointer;">
+            <!-- تم إضافة width و height للشعار لمنع shift في التحميل -->
+            <img src="logo.png" alt="ابن المختار للأدوات المنزلية" class="store-logo" onclick="switchTab('home')" style="cursor:pointer;" width="150" height="50">
         </div>
         
         <div class="search-container">
@@ -1446,6 +1463,7 @@
         /* ====================== معلومات تصحيح ====================== */
         console.log('=== متجر ابن المختار - النظام المحسّن ===');
         console.log('🎯 واجهة سلة تسوق جديدة ومتطورة');
+        console.log('🚀 نظام تحميل الصور الأمثل: Lazy Loading + Cache + IntersectionObserver');
 
         /* ====================== Global state ====================== */
         const WHATSAPP = "967773266534";
@@ -1522,7 +1540,8 @@
         let appliedDiscountCode = '';
         let lastDiscountNotificationTime = 0;
         let currentPage = 1;
-        const productsPerPage = 200;
+        /* =========== التعديل 1: تقليل عدد المنتجات في الصفحة =========== */
+        const productsPerPage =50; // تم تغييرها من 200 إلى 100
         let hasMoreProducts = true;
         let isLoadingProducts = false;
         
@@ -1567,10 +1586,12 @@
         const headerHeight = 145;
         let renderTimeout = null;
 
-        /* ====================== نظام Progressive Image Loading ====================== */
+        /* ====================== نظام Progressive Image Loading مع Caching ====================== */
         let imageObserver = null;
-        const imageCache = new Set();
-        let scrollTimer;
+        const imageCache = new Map(); // استخدام Map بدلاً من Set لتخزين معلومات إضافية
+        
+        // SVG placeholder محسّن بحجم صغير
+        const placeholderSVG = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8f9fa'/%3E%3C/svg%3E";
 
         // تهيئة IntersectionObserver لمراقبة الصور
         function initImageObserver() {
@@ -1585,18 +1606,22 @@
                     }
                 });
             }, {
-                rootMargin: '100px 0px',
+                rootMargin: '150px 0px', // زيادة الهوامش لتحميل الصور مبكراً
                 threshold: 0.01
             });
         }
 
-        // دالة تحميل الصورة
+        // دالة تحميل الصورة مع Caching
         function loadImage(img) {
             const src = img.getAttribute('data-src');
             if (!src) return;
             
+            // إذا كانت الصورة محملة بالفعل، لا تحملها مرة أخرى
+            if (img.src === src) return;
+            
             // إذا كانت الصورة موجودة في الذاكرة المؤقتة
-            if (imageCache.has(src)) {
+            const cachedData = imageCache.get(src);
+            if (cachedData && cachedData.loaded) {
                 img.src = src;
                 img.classList.add('loaded');
                 return;
@@ -1607,49 +1632,68 @@
             tempImg.onload = () => {
                 img.src = src;
                 img.classList.add('loaded');
-                img.classList.add('fade-in');
-                imageCache.add(src);
+                imageCache.set(src, { loaded: true, timestamp: Date.now() });
+                
+                // تنظيف الذاكرة المؤقتة إذا أصبحت كبيرة جداً
+                cleanupImageCache();
             };
             
             tempImg.onerror = () => {
                 img.classList.add('error');
-                img.src = 'https://via.placeholder.com/300?text=No+Image';
+                // استخدام placeholder بدلاً من تحميل صور error كبيرة
+                img.src = placeholderSVG;
                 console.warn('فشل تحميل الصورة:', src);
             };
             
             tempImg.src = src;
         }
 
+        // تنظيف الذاكرة المؤقتة للصور (الاحتفاظ بآخر 50 صورة فقط)
+        function cleanupImageCache() {
+            if (imageCache.size > 50) {
+                const entries = Array.from(imageCache.entries());
+                entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+                
+                // حذف أقدم 10 صور
+                for (let i = 0; i < Math.min(10, entries.length); i++) {
+                    imageCache.delete(entries[i][0]);
+                }
+            }
+        }
+
         // دالة لمراقبة الصور الجديدة
         function observeImages() {
             if (!imageObserver) initImageObserver();
             
-            document.querySelectorAll('.product-img.lazy:not([src])').forEach(img => {
-                // إذا كانت الصورة في viewport بالفعل، حملها فوراً
-                const rect = img.getBoundingClientRect();
-                const isInViewport = (
-                    rect.top <= (window.innerHeight || document.documentElement.clientHeight) &&
-                    rect.bottom >= 0 &&
-                    rect.left <= (window.innerWidth || document.documentElement.clientWidth) &&
-                    rect.right >= 0
-                );
-                
-                if (isInViewport) {
-                    loadImage(img);
-                } else {
-                    imageObserver.observe(img);
+            document.querySelectorAll('.product-img.lazy, .cart-item-image img.lazy, #quickViewImg.lazy').forEach(img => {
+                if (img.getAttribute('data-src') && !img.classList.contains('loaded')) {
+                    // إذا كانت الصورة في viewport بالفعل، حملها فوراً
+                    const rect = img.getBoundingClientRect();
+                    const isInViewport = (
+                        rect.top <= (window.innerHeight + 150) &&
+                        rect.bottom >= -150 &&
+                        rect.left <= (window.innerWidth + 150) &&
+                        rect.right >= -150
+                    );
+                    
+                    if (isInViewport) {
+                        loadImage(img);
+                    } else {
+                        imageObserver.observe(img);
+                    }
                 }
             });
         }
 
-        // تحديث المراقبة عند التمرير
-        window.addEventListener('scroll', () => {
+        // تحسين scroll handler باستخدام throttle
+        let scrollTimer;
+        const throttledObserveImages = throttle(function() {
             clearTimeout(scrollTimer);
             scrollTimer = setTimeout(observeImages, 100);
-        });
+        }, 150);
 
-        // تحديث المراقبة عند تغيير حجم النافذة
-        window.addEventListener('resize', observeImages);
+        // تحسين resize handler باستخدام debounce
+        const debouncedObserveImages = debounce(observeImages, 200);
 
         /* ====================== تحسينات الأداء ====================== */
         function debounce(func, wait) {
@@ -1720,11 +1764,6 @@
             
             // افتراض أن bucket الصور اسمه 'products'
             return `${baseUrl}/products/${cleanPath}`;
-        }
-
-        // ✅ دالة SVG Placeholder
-        function getPlaceholderSVG() {
-            return "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' fill='%23f8f9fa'/%3E%3Ctext x='50' y='55' font-family='Tajawal' font-size='14' text-anchor='middle' fill='%23999'%3E🖼️%3C/text%3E%3C/svg%3E";
         }
 
         function showMessage(text, type = 'info') {
@@ -1818,6 +1857,9 @@
             else mainHeader.classList.remove('header-hidden');
             lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
             scrollBtn.style.display = scrollTop > 400 ? "flex" : "none";
+            
+            // تحديث مراقبة الصور عند التمرير
+            throttledObserveImages();
         }, 100), { passive:true });
         
         scrollBtn.onclick = () => window.scrollTo({ top:0, behavior:'smooth' });
@@ -1910,6 +1952,9 @@
             
             // التمرير للأعلى
             window.scrollTo({top:0, behavior:'smooth'});
+            
+            // تحديث مراقبة الصور بعد تبديل التبويب
+            setTimeout(observeImages, 50);
         }
 
         /* ====================== فتح صفحة المنتج الجديدة ====================== */
@@ -2102,7 +2147,7 @@
 
         let lastRenderedIds = "";
         
-        /* ====================== الدالة الرئيسية لعرض المنتجات بالشكل القديم ====================== */
+        /* ====================== الدالة الرئيسية لعرض المنتجات مع Lazy Loading ====================== */
         window.displayProducts = function(products) {
             const productsGrid = document.getElementById('productsGrid');
             productsGrid.innerHTML = '';
@@ -2134,32 +2179,48 @@
                     displayCurrency = 'ر.س';
                 }
                 
-                // الصورة
+                // الصورة مع Lazy Loading
+                /* =========== التعديل 4: تفعيل التحميل الكسول للصور =========== */
                 let imgTag = '';
                 if (product.image) {
                     const imageUrl = getProductImageUrl(product.image);
                     if (imageUrl) {
                         imgTag = `
                             <img 
-                                src="${imageUrl}" 
+                                src="${placeholderSVG}"
+                                data-src="${imageUrl}"
                                 alt="${product.name}" 
-                                class="product-img"
-                                onerror="this.src='https://via.placeholder.com/300?text=No+Image'">
+                                class="product-img lazy"
+                                width="100%"
+                                height="100%"
+                                loading="lazy"
+                                decoding="async"
+                                style="object-fit: cover;">
                         `;
                     } else {
                         imgTag = `
                             <img 
-                                src="https://via.placeholder.com/300?text=No+Image" 
+                                src="${placeholderSVG}"
                                 alt="${product.name}" 
-                                class="product-img">
+                                class="product-img"
+                                width="100%"
+                                height="100%"
+                                loading="lazy"
+                                decoding="async"
+                                style="object-fit: cover;">
                         `;
                     }
                 } else {
                     imgTag = `
                         <img 
-                            src="https://via.placeholder.com/300?text=No+Image" 
+                            src="${placeholderSVG}"
                             alt="${product.name}" 
-                            class="product-img">
+                            class="product-img"
+                            width="100%"
+                            height="100%"
+                            loading="lazy"
+                            decoding="async"
+                            style="object-fit: cover;">
                     `;
                 }
                 
@@ -2244,8 +2305,8 @@
             displayProducts(items);
         }
 
-        /* ====================== المشاهدة السريعة ====================== */
-        // ✅ ✅ ✅ الدالة المعدلة: استخدام روابط Storage مباشرة
+        /* ====================== المشاهدة السريعة مع Caching ====================== */
+        // ✅ ✅ ✅ الدالة المعدلة: استخدام روابط Storage مباشرة مع Caching
         function quickView(product){
             const imgs = Array.isArray(product.image) ? product.image : [];
             const hasRealImage = imgs.length > 0 && imgs[0] !== null;
@@ -2274,24 +2335,43 @@
             // التحقق إذا كان المنتج منتهياً
             const isOutOfStock = product.out_of_stock === true;
             
-            // ✅ استخدام رابط الصورة المباشر
+            // ✅ استخدام رابط الصورة المباشر مع Caching
             let quickViewImage = '';
 
             if (product.image) {
                 const imageUrl = getProductImageUrl(product.image);
 
                 if (imageUrl) {
-                    quickViewImage = `
-                        <img 
-                            id="quickViewImg"
-                            src="${imageUrl}"
-                            alt="${product.name || ''}"
-                            class="quickview-img"
-                            loading="eager"
-                            decoding="async"
-                            onerror="this.onerror=null; this.src='https://via.placeholder.com/300?text=No+Image';"
-                        >
-                    `;
+                    // تحقق إذا كانت الصورة موجودة في الـ cache
+                    const cachedData = imageCache.get(imageUrl);
+                    if (cachedData && cachedData.loaded) {
+                        quickViewImage = `
+                            <img 
+                                id="quickViewImg"
+                                src="${imageUrl}"
+                                alt="${product.name || ''}"
+                                class="quickview-img loaded"
+                                width="350"
+                                height="350"
+                                style="object-fit: cover;"
+                                loading="eager"
+                                decoding="async">
+                        `;
+                    } else {
+                        quickViewImage = `
+                            <img 
+                                id="quickViewImg"
+                                src="${placeholderSVG}"
+                                data-src="${imageUrl}"
+                                alt="${product.name || ''}"
+                                class="quickview-img lazy"
+                                width="350"
+                                height="350"
+                                style="object-fit: cover;"
+                                loading="eager"
+                                decoding="async">
+                        `;
+                    }
                 }
             }
             
@@ -2402,20 +2482,20 @@
             
             quickViewEl.style.display = 'flex';
             document.body.style.overflow = 'hidden';
-        }
-
-        window.quickViewById = function(id){
-            const p = (window.allProducts || []).find(x => x.id === id);
-            if(!p) return quickView({ id, name: 'منتج', price: 0, image: null });
-            quickView(p);
             
-            // تحميل صورة المشاهدة السريعة فوراً
+            // تحميل صورة المشاهدة السريعة فوراً إذا لم تكن محملة
             setTimeout(() => {
                 const quickViewImg = document.getElementById('quickViewImg');
                 if (quickViewImg && quickViewImg.classList.contains('lazy')) {
                     loadImage(quickViewImg);
                 }
             }, 100);
+        }
+
+        window.quickViewById = function(id){
+            const p = (window.allProducts || []).find(x => x.id === id);
+            if(!p) return quickView({ id, name: 'منتج', price: 0, image: null });
+            quickView(p);
         }
 
         window.closeQuickView = function(){
@@ -2498,7 +2578,7 @@
             showAddedToCartMessage((product.name || 'منتج') + sizeInfo);
         };
 
-        /* ====================== إدارة السلة - الواجهة الجديدة ====================== */
+        /* ====================== إدارة السلة - الواجهة الجديدة مع Caching ====================== */
         window.addToCartWithSize = function(id, name, price, sizeName) {
             cart = JSON.parse(localStorage.getItem("cart") || "[]") || [];
             
@@ -2801,7 +2881,7 @@
             renderCart();
         };
 
-        /* ====================== دالة renderCart الجديدة ====================== */
+        /* ====================== دالة renderCart الجديدة مع Lazy Loading للصور ====================== */
         window.renderCart = function(){
             loadGradualDiscountSettings();
             
@@ -2833,7 +2913,7 @@
                 const originalProduct = (window.allProducts || []).find(p => p.id == item.id);
                 
                 const productName = originalProduct ? originalProduct.name : (item.name || "منتج");
-                const productImage = originalProduct && originalProduct.image ? getProductImageUrl(originalProduct.image) : 'https://via.placeholder.com/300?text=No+Image';
+                const productImage = originalProduct && originalProduct.image ? getProductImageUrl(originalProduct.image) : null;
                 const productPrice = originalProduct ? originalProduct.price : (item.price || "0");
                 
                 let rawPrice = (item.sizeName && item.price) ? item.price.toString().replace(/[^0-9.]/g,'') : 
@@ -2856,9 +2936,24 @@
 
                 const cartItemCard = document.createElement('div');
                 cartItemCard.className = 'cart-item-card';
+                
+                // استخدام Lazy Loading للصور في السلة
+                let cartImageHTML = '';
+                if (productImage) {
+                    // تحقق إذا كانت الصورة موجودة في الـ cache
+                    const cachedData = imageCache.get(productImage);
+                    if (cachedData && cachedData.loaded) {
+                        cartImageHTML = `<img src="${productImage}" alt="${productName}" class="loaded">`;
+                    } else {
+                        cartImageHTML = `<img src="${placeholderSVG}" data-src="${productImage}" alt="${productName}" class="lazy">`;
+                    }
+                } else {
+                    cartImageHTML = `<img src="${placeholderSVG}" alt="${productName}">`;
+                }
+                
                 cartItemCard.innerHTML = `
                     <div class="cart-item-image">
-                        <img src="${productImage}" alt="${productName}" onerror="this.src='https://via.placeholder.com/300?text=No+Image'">
+                        ${cartImageHTML}
                     </div>
                     <div class="cart-item-details">
                         <div class="cart-item-name">${productName}</div>
@@ -2959,6 +3054,9 @@
             }
             
             updateCartTotalDisplay();
+            
+            // مراقبة صور السلة بعد التحميل
+            setTimeout(observeImages, 50);
         };
 
         /* ====================== إرسال الطلب عبر واتساب ====================== */
@@ -3054,17 +3152,18 @@ msg += `ابن المختار – عرفت تختار 🏠`;
 window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
         };
 
-        /* ====================== النظام الجديد: جلب المنتجات مع روابط الصور ====================== */
+        /* ====================== النظام الجديد: جلب المنتجات مع تحسين الأداء ====================== */
         async function fetchAllProductsLite() {
-            console.log('🔄 جلب المنتجات مع روابط الصور المباشرة...');
+            console.log('🔄 جلب المنتجات مع تحسين الأداء...');
             
             try {
                 if (sb) {
-                    // ✅ استعلام لجلب البيانات النصية فقط بما في ذلك حقل image و out_of_stock
+                    // ✅ استعلام لجلب البيانات النصية فقط
                     const { data, error } = await sb
                         .from('products')
                         .select('id, name, price, category, sizes, created_at, image, description, out_of_stock')
-                        .order('created_at', { ascending: false });
+                        .order('created_at', { ascending: false })
+                        .limit(productsPerPage); // تحديد عدد المنتجات في التحميل الأول
 
                     if (error) {
                         console.error('❌ خطأ في جلب المنتجات:', error);
@@ -3087,7 +3186,7 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                                 }
                             }
                             
-                            // ✅ تحويل مسار الصورة إلى رابط Storage مباشر
+                            // ✅ تخزين رابط الصورة فقط (بدون تحميلها)
                             const imageUrl = product.image ? getProductImageUrl(product.image) : null;
                             
                             return {
@@ -3095,7 +3194,7 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                                 name: product.name || 'منتج',
                                 price: parseFloat(product.price) || 0,
                                 category: product.category || 'عام',
-                                image: imageUrl,
+                                image: imageUrl, // تخزين الرابط فقط
                                 sizes: sizesData,
                                 created_at: product.created_at || null,
                                 updated_at: product.created_at || null,
@@ -3104,7 +3203,7 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                             };
                         });
                         
-                        console.log(`✅ تم جلب ${window.allProducts.length} منتج مع روابط الصور المباشرة`);
+                        console.log(`✅ تم جلب ${window.allProducts.length} منتج بدون تحميل الصور`);
                         return true;
                     } else {
                         window.allProducts = [];
@@ -3157,12 +3256,13 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                     
                     let query = sb
                         .from('products')
-                        .select('id, name, price, category, sizes, created_at, image, description, out_of_stock')
+                        /* =========== التعديل 3: تقليل حجم البيانات المستدعاة =========== */
+                        .select('id, name, price, category, sizes, created_at, image, out_of_stock') // تم حذف description
                         .order('created_at', { ascending: false });
                     
-                    if (loadMore) {
+             
                         query = query.range(from, to);
-                    }
+                    
                         
                     const { data: products, error } = await query;
                     
@@ -3189,7 +3289,7 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                                 }
                             }
                             
-                            // ✅ تحويل مسار الصورة إلى رابط Storage مباشر
+                            // ✅ تخزين رابط الصورة فقط (بدون تحميلها)
                             const imageUrl = product.image ? getProductImageUrl(product.image) : null;
                             
                             return {
@@ -3197,11 +3297,11 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                                 name: product.name || 'منتج',
                                 price: parseFloat(product.price) || 0,
                                 category: product.category || 'عام',
-                                image: imageUrl,
+                                image: imageUrl, // تخزين الرابط فقط
                                 sizes: sizesData,
                                 created_at: product.created_at || null,
                                 updated_at: product.created_at || null,
-                                description: product.description || 'منتج عالي الجودة من ابن المختار للأدوات المنزلية',
+                                description: 'مع ابن المختار عرفت تختار 773266534', // قيمة افتراضية
                                 out_of_stock: product.out_of_stock || false
                             };
                         });
@@ -3336,10 +3436,12 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
             });
         }
 
-        setInterval(() => {
-            console.log("🔄 تحديث تلقائي للتصنيفات من السيرفر...");
-            fetchCategories();
-        }, 60000);
+        /* =========== التعديل 2: إيقاف التحديث التلقائي في الخلفية =========== */
+        // تم إزالة setInterval التالي:
+        // setInterval(() => {
+        //     console.log("🔄 تحديث تلقائي للتصنيفات من السيرفر...");
+        //     fetchCategories();
+        // }, 60000);
 
         /* ====================== مراقبة تحديثات التصنيفات ====================== */
         window.addEventListener('storage', function(e) {
@@ -3370,21 +3472,21 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
             
             console.log('🚀 بدء تحميل الصفحة بالنظام المحسّن...');
             
+            // تهيئة نظام Lazy Loading للصور
+            initImageObserver();
+            
             try {
                 const connectionTest = await testSupabaseConnection();
                 
                 if (connectionTest) {
-                    console.log('✅ اتصال Supabase جاهز، جاري تحميل المنتجات مع روابط الصور...');
-                    const success = await fetchAllProductsLite();
+                    console.log('✅ اتصال Supabase جاهز، جاري تحميل المنتجات بدون صور...');
                     
-                    if (!success) {
-                        // إذا فشلت، استخدم النظام القديم للتحميل
-                        console.log('⚠️ استخدام النظام القديم للتحميل');
-                        await fetchProducts(false);
-                    } else {
-                        renderProducts();
-                        fetchCategories();
-                    }
+                    /* =========== التعديل 5: إلغاء التحميل الكامل عند البدء =========== */
+                    // إلغاء استخدام fetchAllProductsLite والاعتماد فقط على fetchProducts مع تقسيم الصفحات
+                    await fetchProducts(false);
+                    
+                    // تحميل التصنيفات بعد تحميل المنتجات
+                    fetchCategories();
                 } else {
                     console.warn('⚠️ لا يمكن الاتصال بـ Supabase');
                     showErrorMessage('تعذر الاتصال بالسيرفر.');
@@ -3414,14 +3516,9 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
             // إضافة معلومات تصحيح
             console.log('✅ الصفحة جاهزة:', {
                 totalProducts: window.allProducts ? window.allProducts.length : 0,
-                cartItems: cart.length
+                cartItems: cart.length,
+                imageCacheSize: imageCache.size
             });
-            
-            // تهيئة مراقبة الصور
-            setTimeout(() => {
-                initImageObserver();
-                observeImages();
-            }, 1000);
             
             // إضافة event listeners لمنع تداخل النقرات
             document.addEventListener('click', function(e) {
@@ -3430,6 +3527,9 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                     sendCart();
                 }
             }, true);
+            
+            // إضافة event listener للتكبير/التصغير
+            window.addEventListener('resize', debouncedObserveImages);
         };
 
         /* ====================== Initial setup ====================== */
