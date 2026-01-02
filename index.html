@@ -97,7 +97,7 @@
         }
 
         /* أزرار التحكم */
-        #darkToggle, #currencyToggle, #cartToggle, #refreshToggle {
+        #darkToggle, #currencyToggle, #cartToggle {
             position:absolute; top: 18px;
             background: #f0f0f0; color: var(--main-color);
             border: 1px solid #eee; padding: 6px 12px;
@@ -121,28 +121,11 @@
             border:1px solid rgba(0, 31, 63, 0.1);
         }
 
-        #refreshToggle {
-            left: 85px;
-            background: rgba(0, 31, 63, 0.05);
-            color: var(--main-color);
-            border:1px solid rgba(0, 31, 63, 0.1);
-        }
-
         #cartToggle {
             right: 15px;
             background: var(--secondary-color);
             color: white;
             border:1px solid var(--secondary-color);
-        }
-
-        /* زر التحديث أثناء التحميل */
-        #refreshToggle.updating {
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
         }
 
         /* البحث */
@@ -939,15 +922,11 @@
         }
         
         /* زر تحميل المزيد */
-                .load-more-container {
+        .load-more-container {
             grid-column: 1 / -1;
             text-align: center;
             padding: 20px;
-            /* هذا السطر الجديد سيرفع الزر للأعلى بعيداً عن الشريط السفلي */
-            padding-bottom: 100px !important; 
-            margin-bottom: 20px;
         }
-
         
         .load-more-btn {
             background: var(--secondary-color);
@@ -1163,7 +1142,7 @@
         /* 🔥🔥 Dark mode CSS 🔥🔥 */
         .dark body{ background:#001226; color:#e6e6e6; }
         .dark header{ background: rgba(0, 31, 63, 0.98); }
-        .dark #darkToggle, .dark #currencyToggle, .dark #refreshToggle, .dark #cartToggle { 
+        .dark #darkToggle, .dark #currencyToggle, .dark #cartToggle { 
             background: #00254d; 
             color: #fff; 
             border-color: #1a3a5c; 
@@ -1279,8 +1258,6 @@
     <header>
         <button id="darkToggle" title="تغيير الوضع">🌙</button>
         <button id="currencyToggle" onclick="toggleCurrency()" title="تغيير العملة">ريال يمني</button>
-    
-        </button>
         <button id="cartToggle" onclick="switchTab('cart')" title="عرض السلة">
             🛒 <span class="cart-total">0 ر.ي</span>
         </button>
@@ -1559,7 +1536,7 @@
         let appliedDiscountCode = '';
         let lastDiscountNotificationTime = 0;
         let currentPage = 1;
-        const productsPerPage = 50;
+        const productsPerPage = 40; // عدد المنتجات في كل صفحة
         let hasMoreProducts = true;
         let isLoadingProducts = false;
         
@@ -1596,7 +1573,6 @@
         const searchInput = document.getElementById("searchInput");
         const clearSearch = document.getElementById("clearSearch");
         const darkToggle = document.getElementById("darkToggle");
-        const refreshToggle = document.getElementById("refreshToggle");
         const mainHeader = document.querySelector('header');
         const discountCodeInput = document.getElementById('discountCodeInput');
         const discountMessage = document.getElementById('discountMessage');
@@ -1604,115 +1580,6 @@
         let lastScrollTop = 0;
         const headerHeight = 145;
         let renderTimeout = null;
-
-        /* ====================== نظام التحقق من المنتجات الجديدة ====================== */
-        /* ====================== تهيئة نظام التحقق من التحديثات ====================== */
-        // تأكد من وجود timestamp أولي إذا لم يكن موجوداً
-        if (!localStorage.getItem('last_products_update')) {
-            // إذا كان المستخدم جديداً، قم بتخزين timestamp الحالي
-            localStorage.setItem('last_products_update', Date.now().toString());
-            console.log('👤 تم تهيئة timestamp للمستخدم الجديد');
-        }
-
-        async function checkForNewProducts() {
-            console.log('🔍 التحقق من وجود منتجات جديدة...');
-            
-            try {
-                // جلب آخر timestamp من قاعدة البيانات
-                const { data, error } = await sb
-                    .from('products')
-                    .select('updated_at')
-                    .order('updated_at', { ascending: false })
-                    .limit(1)
-                    .single();
-                
-                if (error) {
-                    console.error('❌ خطأ في جلب آخر تحديث:', error);
-                    return false; // في حالة الخطأ، نفترض عدم وجود تحديثات
-                }
-                
-                if (!data || !data.updated_at) {
-                    console.log('⚠️ لم يتم العثور على بيانات التحديث');
-                    return false;
-                }
-                
-                // تحويل timestamp إلى رقم
-                const serverTimestamp = new Date(data.updated_at).getTime();
-                const cachedTimestamp = parseInt(localStorage.getItem('last_products_update') || '0');
-                
-                console.log(`📊 المقارنة: السيرفر ${serverTimestamp} | المحلي ${cachedTimestamp}`);
-                
-                // إذا كان timestamp السيرفر أحدث من المخزن محلياً
-                if (serverTimestamp > cachedTimestamp) {
-                    console.log('🆕 يوجد منتجات جديدة!');
-                    return true;
-                }
-                
-                console.log('✅ المنتجات محدثة بالفعل');
-                return false;
-                
-            } catch (err) {
-                console.error('🚨 خطأ في التحقق من المنتجات الجديدة:', err);
-                return false;
-            }
-        }
-
-        /* ====================== دالة تحديث المنتجات عند وجود جديد ====================== */
-        async function updateProductsIfNeeded() {
-            const hasNew = await checkForNewProducts();
-            
-            if (hasNew) {
-                console.log('🔄 تحديث المنتجات بسبب وجود منتجات جديدة...');
-                
-                // مسح البيانات المخزنة محلياً
-                window.allProducts = [];
-                
-                // تحديث timestamp
-                const { data } = await sb
-                    .from('products')
-                    .select('updated_at')
-                    .order('updated_at', { ascending: false })
-                    .limit(1)
-                    .single();
-                
-                if (data && data.updated_at) {
-                    const newTimestamp = new Date(data.updated_at).getTime();
-                    localStorage.setItem('last_products_update', newTimestamp.toString());
-                    console.log(`✅ تم تحديث timestamp إلى: ${newTimestamp}`);
-                }
-                
-                // إعادة تحميل المنتجات من السيرفر
-                await fetchProducts(false);
-                
-                // إظهار إشعار للمستخدم
-                showMessage('تم تحديث المنتجات بنجاح! تمت إضافة منتجات جديدة ✅', 'success');
-                
-                return true;
-            }
-            
-            return false;
-        }
-
-        /* ====================== تحديث يدوي للمنتجات ====================== */
-        async function manualRefresh() {
-            const refreshBtn = document.getElementById('refreshToggle');
-            refreshBtn.classList.add('updating');
-            refreshBtn.disabled = true;
-            
-            try {
-                const updated = await updateProductsIfNeeded();
-                
-                if (!updated) {
-                    showMessage('✅ جميع المنتجات محدثة بالفعل', 'success');
-                }
-            } catch (error) {
-                console.error('خطأ في التحديث اليدوي:', error);
-                showMessage('❌ حدث خطأ أثناء التحديث', 'error');
-            } finally {
-                refreshBtn.classList.remove('updating');
-                refreshBtn.disabled = false;
-            }
-        }
 
         /* ====================== نظام Progressive Image Loading مع Caching ====================== */
         let imageObserver = null;
@@ -2121,6 +1988,9 @@
                 return name.includes(nq) || cat.includes(nq) || code.includes(nq);
             });
             drawItems(items);
+            
+            // إخفاء زر تحميل المزيد أثناء البحث
+            loadMoreContainer.style.display = 'none';
         }, 300);
         
         window.handleSearch = function(q) {
@@ -2232,33 +2102,27 @@
             }
             
             renderTimeout = setTimeout(() => {
-                let items = currentFilter === 'all' 
-                    ? (window.allProducts || []) 
-                    : (window.allProducts || []).filter(p => normalizeStr(p.category) === normalizeStr(currentFilter));
-                
-                items.sort((a, b) => {
-                    if (a.created_at && b.created_at) {
-                        return new Date(b.created_at) - new Date(a.created_at);
-                    }
-                    else if (a.updated_at && b.updated_at) {
-                        return new Date(b.updated_at) - new Date(a.updated_at);
-                    }
-                    else {
-                        return (b.id || '').localeCompare(a.id || '');
-                    }
-                });
-                
-                drawItems(items);
+                // نرسل المصفوفة كاملة للدالة التي ترسم البطاقات
+                drawItems(window.allProducts || []);
             }, 50);
         };
         
-        window.filterProducts = function(cat, btn){
-            document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+        window.filterProducts = async function(cat, btn){
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            currentFilter = cat;
-            searchInput.value = "";
-            renderProducts();
-        }
+            
+            // تحديث الفلتر الحالي وإعادة ضبط الصفحة
+            currentFilter = cat; 
+            currentPage = 1;
+            searchInput.value = ""; // مسح البحث عند اختيار تصنيف
+            
+            // إفراغ قائمة المنتجات الحالية لاستقبال منتجات التصنيف الجديد
+            window.allProducts = [];
+            
+            // طلب المنتجات من السيرفر لهذا التصنيف تحديداً
+            await fetchProducts(false); 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
 
         function isProductNew(product) {
             if (!product.created_at && !product.updated_at) {
@@ -3386,8 +3250,14 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                         .select('id, name, price, category, sizes, created_at, image, out_of_stock')
                         .order('created_at', { ascending: false });
                     
-                    query = query.range(from, to);
+                    // إضافة شرط التصنيف إذا لم يكن المختار هو "الكل"
+                    if (currentFilter !== 'all') {
+                        query = query.eq('category', currentFilter);
+                    }
                     
+                    // تطبيق نظام الصفحات
+                    query = query.range(from, to);
+                        
                     const { data: products, error } = await query;
                     
                     if (error) {
@@ -3421,11 +3291,11 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                                 name: product.name || 'منتج',
                                 price: parseFloat(product.price) || 0,
                                 category: product.category || 'عام',
-                                image: imageUrl, // تخزين الرابط فقط
+                                image: imageUrl,
                                 sizes: sizesData,
                                 created_at: product.created_at || null,
                                 updated_at: product.created_at || null,
-                                description: 'مع ابن المختار عرفت تختار 773266534', // قيمة افتراضية
+                                description: 'مع ابن المختار عرفت تختار 773266534',
                                 out_of_stock: product.out_of_stock || false
                             };
                         });
@@ -3435,10 +3305,6 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                         } else {
                             window.allProducts = newProducts;
                         }
-                        
-                        console.log(`🔄 تم تحويل البيانات: ${window.allProducts.length} منتج إجمالاً`);
-                        console.log(`📊 المنتجات التي تحتوي مقاسات: ${window.allProducts.filter(p => p.sizes && p.sizes.length > 0).length}`);
-                        console.log(`📊 المنتجات المنتهية: ${window.allProducts.filter(p => p.out_of_stock).length}`);
                         
                         hasMoreProducts = newProducts.length === productsPerPage;
                         
@@ -3453,7 +3319,7 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                     // تحديث عرض المنتجات
                     renderProducts();
                     
-                    // تحديث الفئات
+                    // تحديث الفئات (فقط عند التحميل الأول)
                     if (!loadMore) {
                         fetchCategories();
                     }
@@ -3505,9 +3371,8 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                 const allBtn = document.createElement('button');
                 allBtn.className = 'filter-btn active';
                 allBtn.innerHTML = '👁️ الكل';
-                allBtn.onclick = () => {
-                    window.filterProducts('all', allBtn);
-                    window.scrollTo({top: 0, behavior: 'smooth'});
+                allBtn.onclick = (e) => {
+                    window.filterProducts('all', e.target);
                 };
                 categoriesBar.appendChild(allBtn);
 
@@ -3521,7 +3386,6 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                         
                         btn.onclick = (e) => {
                             window.filterProducts(cat.name, e.target);
-                            window.scrollTo({top: 0, behavior: 'smooth'});
                         };
                         categoriesBar.appendChild(btn);
                     });
@@ -3596,19 +3460,12 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
                 const connectionTest = await testSupabaseConnection();
                 
                 if (connectionTest) {
-                    console.log('✅ اتصال Supabase جاهز، جاري التحقق من المنتجات الجديدة...');
+                    console.log('✅ اتصال Supabase جاهز، جاري تحميل المنتجات...');
                     
-                    // ✅ الخطوة الجديدة: التحقق من المنتجات الجديدة
-                    await updateProductsIfNeeded();
+                    await fetchProducts(false);
                     
-                    // ثم تحميل المنتجات إذا لم تكن موجودة
-                    if (!window.allProducts || window.allProducts.length === 0) {
-                        await fetchProducts(false);
-                    } else {
-                        renderProducts();
-                        fetchCategories();
-                    }
-                    
+                    // تحميل التصنيفات بعد تحميل المنتجات
+                    fetchCategories();
                 } else {
                     console.warn('⚠️ لا يمكن الاتصال بـ Supabase');
                     showErrorMessage('تعذر الاتصال بالسيرفر.');
@@ -3639,8 +3496,7 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
             console.log('✅ الصفحة جاهزة:', {
                 totalProducts: window.allProducts ? window.allProducts.length : 0,
                 cartItems: cart.length,
-                imageCacheSize: imageCache.size,
-                lastUpdateTimestamp: localStorage.getItem('last_products_update')
+                imageCacheSize: imageCache.size
             });
             
             // إضافة event listeners لمنع تداخل النقرات
@@ -3700,6 +3556,4 @@ window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`);
     
 </body>
 
-
 </html>
-
