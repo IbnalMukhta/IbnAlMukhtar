@@ -1200,6 +1200,151 @@
   }
 
   // ===========================================
+  // ============ الحل لمشكلة الكاش =============
+  // ===========================================
+
+  /**
+   * تحقق مما إذا كانت هناك منتجات جديدة على السيرفر
+   * تستخدم استعلام خفيف للحصول على آخر timestamp
+   * @returns {Promise<boolean>} true إذا كان هناك منتجات جديدة
+   */
+  async function checkForNewProducts() {
+    try {
+      // 1. الحصول على آخر تحديث من localStorage
+      const lastUpdate = localStorage.getItem('last_products_update');
+      
+      // 2. استعلام خفيف للحصول على آخر updated_at من السيرفر
+      const { data, error } = await sb
+        .from(PRODUCTS_TABLE)
+        .select('updated_at')
+        .order('updated_at', { ascending: false })
+        .limit(1)
+        .single();
+      
+      if (error) {
+        console.error('خطأ في التحقق من المنتجات الجديدة:', error);
+        return false; // في حالة الخطأ، نستخدم البيانات المخزنة
+      }
+      
+      // 3. تحويل التواريخ إلى timestamps للأسهل في المقارنة
+      const serverTimestamp = data?.updated_at ? new Date(data.updated_at).getTime() : 0;
+      const localTimestamp = lastUpdate ? parseInt(lastUpdate) : 0;
+      
+      // 4. المقارنة
+      if (serverTimestamp > localTimestamp) {
+        console.log('🆕 تم اكتشاف منتجات جديدة، سيتم تحديث البيانات');
+        return true;
+      }
+      
+      console.log('✅ لا توجد منتجات جديدة، استخدام البيانات المخزنة');
+      return false;
+      
+    } catch (error) {
+      console.error('خطأ في checkForNewProducts:', error);
+      return false; // في حالة الخطأ، نستخدم البيانات المخزنة
+    }
+  }
+
+  /**
+   * تحديث timestamp آخر تحديث في localStorage
+   */
+  function updateLastProductsTimestamp() {
+    const now = Date.now();
+    localStorage.setItem('last_products_update', now.toString());
+    console.log('📝 تم تحديث timestamp المنتجات:', now);
+  }
+
+  /**
+   * دالة محسنة لتحميل المنتجات مع التحقق من التحديثات
+   */
+  async function loadAllProductsWithCacheCheck() {
+    showLoading("جاري التحقق من تحديثات المنتجات...");
+    
+    try {
+      // 1. التحقق مما إذا كانت هناك منتجات جديدة
+      const hasNewProducts = await checkForNewProducts();
+      
+      // 2. إذا كان هناك منتجات جديدة أو أول مرة للمستخدم
+      if (hasNewProducts || allProducts.length === 0) {
+        // تحميل المنتجات من السيرفر
+        const { data: products, error } = await sb
+          .from(PRODUCTS_TABLE)
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          throw error;
+        }
+        
+        allProducts = products || [];
+        
+        // تحديث timestamp في localStorage
+        updateLastProductsTimestamp();
+        
+        console.log(`✅ تم تحميل ${allProducts.length} منتج من السيرفر`);
+        
+      } else {
+        console.log(`✅ استخدام ${allProducts.length} منتج مخزن`);
+      }
+      
+      // 3. تحديث الإحصائيات والعرض
+      updateStatistics();
+      filterAndSortProducts();
+      
+      // 4. تحديث عرض التنشيط إذا كان ظاهرًا
+      if (elements.refreshSection.style.display === 'block') {
+        renderRefreshProducts(allProducts);
+      }
+      
+    } catch (error) {
+      console.error("خطأ في تحميل المنتجات:", error);
+      showNotification("❌ حدث خطأ أثناء تحميل المنتجات", 'error');
+      allProducts = [];
+      filterAndSortProducts();
+    } finally {
+      hideLoading();
+    }
+  }
+
+  /**
+   * تحميل سريع للمنتجات (للاستخدام في العمليات المجمعة)
+   */
+  async function loadAllProducts() {
+    showLoading("جاري تحميل المنتجات...");
+    
+    try {
+      const { data: products, error } = await sb
+        .from(PRODUCTS_TABLE)
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) {
+        throw error;
+      }
+      
+      allProducts = products || [];
+      
+      // تحديث timestamp في localStorage
+      updateLastProductsTimestamp();
+      
+      updateStatistics();
+      filterAndSortProducts();
+      
+      if (elements.refreshSection.style.display === 'block') {
+        renderRefreshProducts(allProducts);
+      }
+      
+    } catch (error) {
+      console.error("خطأ في تحميل المنتجات:", error);
+      showNotification("❌ حدث خطأ أثناء تحميل المنتجات", 'error');
+      allProducts = [];
+      filterAndSortProducts();
+    } finally {
+      hideLoading();
+    }
+  }
+
+  // ===========================================
   // ============ دوال التنشيط المحسنة =========
   // ===========================================
   
@@ -1512,7 +1657,7 @@
       updateRefreshSelectAllText();
       
       // إعادة تحميل البيانات من السيرفر
-      await loadAllProducts();
+      await loadAllProductsWithCacheCheck();
       
       // إذا كنا في وضع التنشيط، أعد عرض المنتجات
       if (elements.refreshSection.style.display === 'block') {
@@ -1530,39 +1675,6 @@
   // ===========================================
   // ============ نهاية دوال التنشيط ============
   // ===========================================
-
-  // دالة لتحميل جميع المنتجات
-  async function loadAllProducts() {
-    showLoading("جاري تحميل المنتجات...");
-    
-    try {
-      const { data: products, error } = await sb
-        .from(PRODUCTS_TABLE)
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) {
-        throw error;
-      }
-      
-      allProducts = products || [];
-      updateStatistics();
-      filterAndSortProducts();
-      
-      // تحديث عرض التنشيط إذا كان ظاهرًا
-      if (elements.refreshSection.style.display === 'block') {
-        renderRefreshProducts(allProducts);
-      }
-      
-    } catch (error) {
-      console.error("خطأ في تحميل المنتجات:", error);
-      showNotification("❌ حدث خطأ أثناء تحميل المنتجات", 'error');
-      allProducts = [];
-      filterAndSortProducts();
-    } finally {
-      hideLoading();
-    }
-  }
 
   // دالة لتحميل التصنيفات
   async function loadCategories() {
@@ -2247,7 +2359,7 @@
   // تحميل البيانات عند بدء التحميل
   document.addEventListener('DOMContentLoaded', async () => {
     await loadCategories();
-    await loadAllProducts();
+    await loadAllProductsWithCacheCheck(); // استخدام الدالة المحسنة
   });
 
   // إضافة الوظائف إلى النطاق العام للاستخدام في HTML
